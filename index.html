@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>соцсеть</title>
+<style>
+:root{--bg:#fff;--fg:#111;--soft:#666;--brd:#999;--card:#fff;--boxbg:#fafafa;--inp:#fff}
+body{margin:0;font-family:system-ui,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--fg)}
+input,textarea,select,button{font-family:inherit}
+body.dark{--bg:#121212;--fg:#e8e8e8;--soft:#aaa;--brd:#484848;--card:#1e1e1e;--boxbg:#262626;--inp:#181818}
+body.dark #mainScreen,body.dark #authScreen{background:var(--bg);color:var(--fg)}
+body.dark input,body.dark textarea,body.dark select{background:var(--inp);color:var(--fg);border-color:var(--brd)!important}
+body.dark button{background:#2a2a2a;color:var(--fg);border:1px solid #555}
+body.dark *{border-color:var(--brd)!important}
+body.dark div[style*="background:white"],body.dark div[style*="background:#fff"]{background:#232323!important;color:var(--fg)}
+body.dark div[style*="background:#fafafa"]{background:#262626!important}
+body.dark div[style*="background:#f5f5f5"],body.dark div[style*="background:#f8f8f8"],body.dark div[style*="background:#f0f0f0"]{background:#2c2c2c!important}
+body.dark div[style*="background:#fff8dc"]{background:#3a3320!important;border-color:#8a7a40!important}
+body.dark div[style*="background:#111"]{background:#0c0c0c!important}
+body.dark div[style*="background:#1c1c1c"]{background:#151515!important}
+body.dark span[style*="color:#666"],body.dark span[style*="color:#888"],body.dark div[style*="color:#666"],body.dark div[style*="color:#999"],body.dark div[style*="color:#888"]{color:#aaa!important}
+body.dark span[style*="color:#07c"]{color:#6ab!important}
+body.dark button[style*="background:#fff"]{background:#2a2a2a!important;color:var(--fg)}
+body.dark button[style*="background:#333"]{background:#3a3a3a!important}
+body.dark #filterPanel,body.dark #pollBar,body.dark #gradPostBar,body.dark #gradChatBar{background:var(--boxbg)}
+</style>
+</head>
+<body>
+
+<div id="authScreen">
+  <h2 data-lang="register">регистрация</h2>
+  <input id="regNick" placeholder="ник" data-lang-placeholder="nick">
+  <input id="regPass" type="password" placeholder="пароль (6+)" data-lang-placeholder="pass6">
+  <button onclick="register()" data-lang="registerBtn">зарегистрироваться</button>
+  <div id="regOk" style="display:none"><span data-lang="done">готово!</span> id: <span id="uidSpan"></span></div>
+
+  <h2 style="margin-top:24px" data-lang="loginTitle">вход по id</h2>
+  <input id="logId" placeholder="айди (uid)" data-lang-placeholder="uidPlace">
+  <input id="logPass" type="password" placeholder="пароль" data-lang-placeholder="pass">
+  <button onclick="login()" data-lang="loginBtn">войти</button>
+  <div id="error" style="color:red"></div>
+  <div id="claimSection" style="display:none;margin-top:10px;border:1px solid #ccc;padding:8px">
+    <div>старый аккаунт без пароля - задай новый</div>
+    <input id="claimPass" type="password" placeholder="новый пароль (6+)">
+    <button onclick="claimAccount()">задать пароль</button>
+    <div id="claimErr" style="color:red"></div>
+  </div>
+</div>
+
+<div id="mainScreen" style="display:none">
+  <div><span style="font-size:18px;font-weight:bold" data-lang="socnet">соцсеть</span><button onclick="logout()" data-lang="logout">выход</button> <button onclick="toggleTheme()" id="themeBtn"></button></div>
+  <div style="margin:12px 0">
+    <button onclick="switchTab('main')" id="tabMainBtn" data-lang="main">главная</button>
+    <button onclick="switchTab('profile')" id="tabProfileBtn" data-lang="profile">профиль</button>
+    <button onclick="switchTab('chat')" id="tabChatBtn" data-lang="chat">чат</button>
+    <button onclick="switchTab('friends')" id="tabFriendsBtn" data-lang="friends">друзья</button>
+    <button onclick="switchTab('mail')" id="tabMailBtn" data-lang="mail">почта</button>
+    <button onclick="switchTab('notif')" id="tabNotifBtn" data-lang="notif">уведомления</button>
+    <button onclick="switchTab('stories')" id="tabStoriesBtn" data-lang="stories">истории</button>
+    <button onclick="switchTab('shop')" id="tabShopBtn" data-lang="shop">магазин</button>
+    <button onclick="switchTab('bank')" id="tabBankBtn" data-lang="bank">банк</button>
+    <button onclick="switchTab('top')" id="tabTopBtn" data-lang="topRich">топ богачей</button>
+    <button onclick="switchTab('settings')" id="tabSettingsBtn" data-lang="settings">настройки</button>
+    <button onclick="switchTab('reports')" id="tabReportsBtn" data-lang="reports" style="display:none">жалобы</button>
+  </div>
+
+  <div id="tabMain">
+    <div style="margin-bottom:12px">
+      <input id="searchInput" placeholder="поиск по постам..." style="width:70%" data-lang-placeholder="searchPlace">
+      <button onclick="searchPosts()" data-lang="search">поиск</button>
+      <button onclick="clearSearch()" data-lang="reset">сброс</button>
+      <button onclick="toggleFilters()" id="filterBtn" data-lang="filters">фильтры</button>
+      <div id="filterPanel" style="display:none;border:1px solid #ccc;padding:8px;margin-top:6px">
+        <label><input type="checkbox" id="fFriends" onchange="syncFilters()"> <span data-lang="fFriends">только друзья</span></label>
+        <label><input type="checkbox" id="fMine" onchange="syncFilters()"> <span data-lang="fMine">мои посты</span></label>
+        <label><input type="checkbox" id="fPoll" onchange="syncFilters()"> <span data-lang="fPoll">с опросами</span></label>
+        <label><input type="checkbox" id="fGrad" onchange="syncFilters()"> <span data-lang="fGrad">с градиентом</span></label>
+        <div style="margin-top:6px"><span data-lang="sortBy">сортировка</span>:
+          <select id="fSort" onchange="syncFilters()">
+            <option value="new" data-lang="newFirst">новые</option>
+            <option value="old" data-lang="oldFirst">старые</option>
+            <option value="likes" data-lang="byLikes">по лайкам</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div id="postBar" style="margin-bottom:12px">
+      <textarea id="postText" placeholder="напиши пост" style="width:100%" data-lang-placeholder="writePost"></textarea>
+      <button onclick="addPost()" data-lang="send">отправить</button>
+      <button onclick="togglePollBar()" id="pollToggleBtn" data-lang="addPoll">+ опрос</button>
+      <button onclick="toggleGradBar('post')" id="gradPostBtn" data-lang="gradient" style="display:none">градиент</button>
+    </div>
+    <div id="gradPostBar" style="display:none;border:1px solid #ccc;padding:8px;margin-bottom:8px">
+      <span data-lang="grad1">цвет 1</span> <input type="color" id="gradPost1" value="#ff0040">
+      <span data-lang="grad2">цвет 2</span> <input type="color" id="gradPost2" value="#4d00ff">
+      <button onclick="applyGrad('post')" data-lang="applyGrad">применить</button>
+      <button onclick="clearGrad('post')" data-lang="cancel">отмена</button>
+      <span id="gradPostLabel" style="font-size:12px;color:#666"></span>
+    </div>
+    <div id="pollBar" style="display:none;border:1px solid #ccc;padding:8px;margin-bottom:8px">
+      <input id="pollQ" placeholder="вопрос опроса" style="width:80%" data-lang-placeholder="pollQ">
+      <div id="pollOpts">
+        <input class="pollOpt" placeholder="вариант 1" style="width:60%;margin:2px 0"><br>
+        <input class="pollOpt" placeholder="вариант 2" style="width:60%;margin:2px 0">
+      </div>
+      <button onclick="addPollOpt()">+</button>
+      <button onclick="togglePollBar()" data-lang="cancel">отмена</button>
+    </div>
+    <div id="feed"></div>
+  </div>
+
+  <div id="tabProfile" style="display:none">
+    <div id="profileContent">
+      <p id="profileNickAndBadge"></p>
+      <p id="profileOnline" style="font-size:12px;color:#666"></p>
+      <p id="profileSubs"><span data-lang="subs">подписчики</span>: 0</p>
+      <p id="profileTotalLikes"><span data-lang="totalLikes">всего лайков</span>: 0</p>
+      <div style="margin:10px 0">
+        <button id="profileSubBtn" style="display:none"></button>
+        <button id="profileStoriesBtn" style="display:none" onclick="viewUserStories()" data-lang="viewStories"></button>
+        <button id="profileBackBtn" style="display:none" onclick="showProfile(null)" data-lang="backToMy">назад к моему профилю</button>
+      </div>
+      <hr>
+      <h4 data-lang="userPosts">посты пользователя</h4>
+      <div id="profilePosts"></div>
+    </div>
+  </div>
+
+  <div id="tabChat" style="display:none">
+    <div id="chatListSection">
+      <h3 data-lang="rooms">комнаты</h3>
+      <input id="newChatName" placeholder="название новой комнаты" data-lang-placeholder="newRoom">
+      <button onclick="createChat()" data-lang="create">создать</button>
+      <div id="chatList"></div>
+      <hr>
+      <h3 data-lang="pm">личные сообщения</h3>
+      <div id="dmList"></div>
+    </div>
+    <div id="chatRoomSection" style="display:none">
+      <h3 id="currentChatTitle">чат</h3>
+      <button onclick="leaveChat()" data-lang="back">назад</button>
+      <div id="chatCtxLabel" style="display:none;font-size:12px;color:#555;margin:4px 0"></div>
+      <div id="pinnedBar" style="display:none;margin:6px 0"></div>
+      <div id="chatMessages" style="margin:10px 0"></div>
+      <div id="gradChatBar" style="display:none;border:1px solid #ccc;padding:8px;margin-bottom:6px">
+        <span data-lang="grad1">цвет 1</span> <input type="color" id="gradChat1" value="#ff0040">
+        <span data-lang="grad2">цвет 2</span> <input type="color" id="gradChat2" value="#4d00ff">
+        <button onclick="applyGrad('chat')" data-lang="applyGrad">применить</button>
+        <button onclick="clearGrad('chat')" data-lang="cancel">отмена</button>
+        <span id="gradChatLabel" style="font-size:12px;color:#666"></span>
+      </div>
+      <div><input id="chatInput" placeholder="сообщение" style="width:60%" data-lang-placeholder="msgPlace"><button onclick="sendChatMsg()" data-lang="sendMsg">отправить</button> <button onclick="toggleGradBar('chat')" id="gradChatBtn" data-lang="gradient" style="display:none">градиент</button></div>
+    </div>
+  </div>
+
+  <div id="tabFriends" style="display:none">
+    <h3 data-lang="friends">друзья</h3>
+    <div style="margin:8px 0;padding:8px;border:1px solid #ccc">
+      <h4 data-lang="userSearch">поиск пользователей</h4>
+      <input id="userSearchInput" placeholder="ник, email или uid" data-lang-placeholder="userSearchPlace" style="width:70%">
+      <button onclick="searchUsers()" data-lang="search">поиск</button>
+      <div id="userSearchResults" style="margin-top:6px"></div>
+    </div>
+    <div><button onclick="switchSubFriends('list')" data-lang="myFriends">мои друзья</button><button onclick="switchSubFriends('requests')" data-lang="requests">заявки</button></div>
+    <div id="subFriendsList"><div id="friendsList"></div></div>
+    <div id="subFriendsRequests" style="display:none">
+      <h4 data-lang="sendReq">отправить заявку</h4>
+      <input id="friendEmail" placeholder="email друга" data-lang-placeholder="friendEmail"><button onclick="sendFriendRequest()" data-lang="send">отправить</button>
+      <div id="friendReqMsg" style="color:red"></div><hr>
+      <h4 data-lang="incomingReqs">входящие заявки</h4>
+      <div id="incomingRequests"></div>
+    </div>
+  </div>
+
+  <div id="tabMail" style="display:none">
+    <h3 data-lang="mail">почта</h3>
+    <div>
+      <input id="mailTo" placeholder="кому (email)" data-lang-placeholder="toEmail">
+      <textarea id="mailText" placeholder="письмо" data-lang-placeholder="letter"></textarea>
+      <button onclick="sendMail()" data-lang="sendMail">отправить</button>
+      <div id="mailError" style="color:red"></div>
+    </div>
+    <hr>
+    <button id="mailboxBtn" onclick="openMailbox()" data-lang="mailbox">почтовый ящик</button>
+    <div id="inbox" style="display:none"><div id="mailList"></div><button onclick="hideInbox()" data-lang="closeMailbox">закрыть</button></div>
+  </div>
+
+  <div id="tabNotif" style="display:none"><h3 data-lang="notif">уведомления</h3><div id="notifList"></div></div>
+
+  <div id="tabStories" style="display:none">
+    <h3 data-lang="stories">истории</h3>
+    <div style="margin-bottom:10px;border:1px solid #ccc;padding:8px">
+      <textarea id="storyText" placeholder="текст истории..." style="width:100%" data-lang-placeholder="storyPlace"></textarea>
+      <button onclick="addStory()" data-lang="create">создать</button>
+      <div id="storyMsg" style="color:red"></div>
+      <div style="font-size:12px;color:#666;margin-top:4px" data-lang="storyLimit">максимум 5 историй, живут 24 часа</div>
+    </div>
+    <div id="storiesFeed"></div>
+  </div>
+
+  <div id="tabShop" style="display:none">
+    <h3 data-lang="shop">магазин</h3>
+    <p style="font-size:18px"><span data-lang="tixBalance">баланс tix</span>: <span id="shopTix">0</span></p>
+    <p style="font-size:12px;color:#666" data-lang="currencyHint">10 tix = лайк, 20 tix = подписка</p>
+    <div id="shopList"></div>
+    <div id="shopMsg" style="color:red;margin-top:5px"></div>
+  </div>
+
+  <div id="tabBank" style="display:none">
+    <h3 data-lang="bank">банк tix</h3>
+    <p style="font-size:18px"><span data-lang="tixBalance">баланс tix</span>: <span id="tixBalance">0</span></p>
+    <h3 data-lang="transfer">перевести tix</h3>
+    <input id="transferUid" placeholder="uid получателя" data-lang-placeholder="transferUid">
+    <input id="transferAmount" type="number" placeholder="сколько tix" min="1" data-lang-placeholder="transferAmount">
+    <button onclick="transferTix()" data-lang="send">отправить</button>
+    <div id="bankMsg" style="color:red;margin-top:5px"></div>
+    <hr>
+    <h3 data-lang="myNfts">мои NFT</h3>
+    <div id="myNftList"></div>
+  </div>
+
+  <div id="tabTop" style="display:none">
+    <h3 data-lang="topRich">топ богачей tix</h3>
+    <div id="topList"></div>
+  </div>
+
+  <div id="tabReports" style="display:none">
+    <h3 data-lang="reports">жалобы на посты</h3>
+    <div id="reportsList"></div>
+  </div>
+
+  <div id="tabSettings" style="display:none">
+    <div>
+      <button onclick="switchSubSettings('profile')" data-lang="profile">профиль</button>
+      <button onclick="switchSubSettings('privacy')" data-lang="privacy">конфиденциальность</button>
+      <button onclick="switchSubSettings('language')" data-lang="language">язык</button>
+    </div>
+    <div id="subProfile">
+      <h3 data-lang="profile">профиль</h3>
+      <p><span data-lang="emailLabel">почта</span>: <span id="showEmail"></span></p>
+      <p>id: <span id="showUid"></span></p>
+      <h3 data-lang="changeNick">сменить ник</h3>
+      <input id="newNick" placeholder="новый ник" data-lang-placeholder="newNick"><button onclick="changeNick()" data-lang="save">сохранить</button>
+      <h3 data-lang="changePass">сменить пароль</h3>
+      <input id="oldPass" type="password" placeholder="текущий пароль" data-lang-placeholder="oldPass">
+      <input id="newPass" type="password" placeholder="новый пароль (6+)" data-lang-placeholder="newPass6"><button onclick="changePass()" data-lang="save">сохранить</button>
+      <div id="settingsMsg" style="color:green;margin-top:5px"></div>
+    </div>
+    <div id="subPrivacy" style="display:none">
+      <h3 data-lang="cloudPass">облачный пароль</h3>
+      <div id="cloudPassSection"><p data-lang="noCloudPass">облачный пароль не установлен</p><input id="newCloudPass" type="password" placeholder="новый облачный пароль" data-lang-placeholder="newCloudPass"><button onclick="setCloudPass()" data-lang="set">установить</button></div>
+      <div id="cloudPassChangeSection" style="display:none"><p data-lang="cloudPassSet">облачный пароль установлен</p><input id="oldCloudPass" type="password" placeholder="текущий облачный пароль" data-lang-placeholder="oldCloudPass"><input id="changeCloudPass" type="password" placeholder="новый облачный пароль" data-lang-placeholder="newCloudPass"><button onclick="changeCloudPass()" data-lang="change">изменить</button></div>
+      <div id="cloudMsg" style="color:green;margin-top:5px"></div>
+    </div>
+    <div id="subLanguage" style="display:none">
+      <h3 data-lang="language">язык</h3>
+      <select id="langSelect" onchange="setLang(this.value)">
+        <option value="ru">Русский</option>
+        <option value="en">English</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<div id="cloudPassModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);padding:40px">
+  <div style="background:white;padding:20px;max-width:400px;margin:auto">
+    <h3 data-lang="cloudPass">облачный пароль</h3>
+    <p data-lang="enterCloudPass">введите облачный пароль</p>
+    <input id="cloudPassInput" type="password" placeholder="облачный пароль" data-lang-placeholder="cloudPassPlace"><button onclick="checkCloudPass()" data-lang="confirm">подтвердить</button>
+    <div id="cloudPassError" style="color:red;margin-top:8px"></div>
+  </div>
+</div>
+
+<div id="actionModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);padding:40px">
+  <div style="background:white;padding:20px;max-width:400px;margin:auto">
+    <h3 data-lang="messageActions">действия с сообщением</h3>
+    <p><b id="actFrom"></b></p>
+    <button onclick="replyToMsg()" data-lang="reply">ответить</button>
+    <button onclick="fwdMsg()" data-lang="forward">переслать</button>
+    <button id="pinBtn" onclick="pinMsg()" data-lang="pin" style="display:none">закрепить</button>
+    <button onclick="closeActionModal()" data-lang="close">закрыть</button>
+  </div>
+</div>
+
+<div id="pickModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);padding:40px;overflow:auto">
+  <div style="background:white;padding:20px;max-width:400px;margin:auto">
+    <h3 data-lang="sendTo">куда отправить</h3>
+    <div id="pickList"></div>
+    <button onclick="closePickModal()" data-lang="close">закрыть</button>
+  </div>
+</div>
+
+<script>
+const AK = 'AIzaSyACNRV8N38hQ3qDe_dk-QLScYMxXyewVt8';
+const DB = 'https://jdjdjd-5f261-default-rtdb.firebaseio.com';
+const _of=window.fetch.bind(window);
+let _tk=null,_tkP=null,offlineMode=false;
+function ftk(){if(_tk)return Promise.resolve(_tk);if(_tkP)return _tkP;_tkP=window.fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key='+AK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({returnSecureToken:true})}).then(r=>r.json()).then(d=>{if(d&&d.idToken)return _tk=d.idToken;throw 0}).then(t=>{_tkP=null;return t},e=>{_tkP=null;throw e});return _tkP}
+function dbL(){try{return JSON.parse(localStorage.getItem('socnet_db')||'{}')}catch(e){return{}}}
+function dbS(d){try{localStorage.setItem('socnet_db',JSON.stringify(d))}catch(e){}}
+function dbSync(){try{let d=dbL();return _of(DB+'/socnetMirror.json?auth='+encodeURIComponent(AK),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).then(r=>{if(r&&r.ok)return r;throw 0}).then(()=>true).catch(()=>false)}catch(e){return Promise.resolve(false)}}
+function dbG(d,p){p=p.split('/').filter(Boolean);let c=d;for(const x of p){if(c==null||typeof c!=='object')return undefined;c=c[x.replace(/\.json$/,'')]}return c}
+function dbP(d,p,v){p=p.split('/').filter(Boolean).map(x=>x.replace(/\.json$/,''));let c=d;for(let i=0;i<p.length-1;i++){if(c[p[i]]==null)c[p[i]]={};c=c[p[i]]}if(v===null)delete c[p[p.length-1]];else c[p[p.length-1]]=v}
+function dbU(d,p,v){let q=p.split('/').filter(Boolean).map(x=>x.replace(/\.json$/,''));let k=q.pop(),c=d;for(const x of q){if(c[x]==null)c[x]={};c=c[x]}if(v===null)delete c[k];else c[k]=v}
+function dbN(d,p,v){let q=p.split('/').filter(Boolean).map(x=>x.replace(/\.json$/,''));let c=d;for(const x of q){if(c[x]==null)c[x]={};c=c[x]}let k='-'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);c[k]=v;return k}
+function localFb(path,method,body){let d=dbL();return new Promise(res=>{if(method==='POST'){let k=dbN(d,path,body);dbS(d);res({ok:true,json:()=>Promise.resolve({name:k}),status:200});return}if(method==='PUT'){dbU(d,path,body);dbS(d);res({ok:true,json:()=>Promise.resolve(null),status:200});return}if(method==='DELETE'){dbP(d,path,null);dbS(d);res({ok:true,json:()=>Promise.resolve(null),status:200});return}let v=dbG(d,path);if(v===undefined)v=null;res({ok:true,json:()=>Promise.resolve(v),status:200})})}
+function tryOnce(url,o){return _of(url,o).then(r=>{if(r&&r.ok)return r;throw 0})}
+function checkResp(r){
+  if(!r||!r.clone)return r;
+  return r.clone().text().then(txt=>{
+    try{let j=JSON.parse(txt);if(j&&j.error)throw new Error(j.error||'fb')}catch(e){if(!(e instanceof SyntaxError))throw e}
+    return r
+  })
+}
+fetch=function(u,o){
+  if(typeof u!=='string'||u.indexOf(DB)!==0)return _of(u,o);
+  let path=u.slice(DB.length),q=path.indexOf('?');if(q>=0)path=path.slice(0,q);
+  let method=((o||{}).method||'GET').toUpperCase();
+  let b=null;if(o&&o.body){try{b=JSON.parse(o.body)}catch(e){b=String(o.body)}}
+  // 1) прямой запрос с ключом (проверено: сервер отвечает)
+  return tryOnce(DB+path+(path.indexOf('?')===-1?'?':'&')+'auth='+encodeURIComponent(AK),o)
+  // 2) фолбэк: токен анонима
+  .catch(()=>ftk().then(tk=>tryOnce(DB+path+(path.indexOf('?')===-1?'?':'&')+'auth='+encodeURIComponent(tk),o)))
+  .then(r=>{return checkResp(r).then(rr=>{offlineMode=false;return rr})})
+  // 3) локальный режим
+  .catch(()=>{offlineMode=true;return localFb(path,method,b)})
+}
+
+let cu=null,cn='',ce='',pu=null,pn='',pe='';
+let pt=null,mt=null,clt=null,cmt=null,dmt=null,nt=null;
+let cci=null,cdi=null,allP=[],sq='',un=0,subs=new Set(),cvu=null,cl='ru';
+const VIP=['umtk1av2o83l87','umtimevvh14x9k'];
+let tix=0;
+let openC=new Set();
+let drafts={};
+let focusedInput=null;
+let cCache={};
+let actMsg=null,pickKind=null,pendingRepost=null,pendingFwd=null;
+let replyCtx=null,fwdData=null,pendingScroll=null;
+let hiddenPosts=new Set();
+let filters={friends:false,mine:false,poll:false,grad:false,sort:'new'};
+let fset=new Set();
+const LIKE_REWARD=10;
+const SUB_REWARD=20;
+
+const lang={
+  ru:{
+    register:'регистрация',registerBtn:'зарегистрироваться',done:'готово!',loginTitle:'вход по id',loginBtn:'войти',
+    logout:'выход',main:'главная',profile:'профиль',chat:'чат',friends:'друзья',mail:'почта',notif:'уведомления',
+    settings:'настройки',search:'поиск',reset:'сброс',send:'отправить',subs:'подписчики',totalLikes:'всего лайков',
+    stories:'истории',create:'создать',storyPlace:'текст истории...',storyLimit:'максимум 5 историй, живут 24 часа',storyMade:'история создана',storyMax:'максимум 5 историй',storyNoText:'пустая история',storyEmpty:'историй нет',storyDelete:'удалить',storyBy:'история от',storyExpired:'истекла',viewStories:'посмотреть истории',
+    backToMy:'назад к моему профилю',userPosts:'посты пользователя',rooms:'комнаты',create:'создать',pm:'личные сообщения',
+    back:'назад',sendMsg:'отправить',requests:'заявки',myFriends:'мои друзья',sendReq:'отправить заявку',
+    incomingReqs:'входящие заявки',sendMail:'отправить',mailbox:'почтовый ящик',closeMailbox:'закрыть',
+    privacy:'конфиденциальность',language:'язык',emailLabel:'почта',changeNick:'сменить ник',
+    save:'сохранить',changePass:'сменить пароль',cloudPass:'облачный пароль',noCloudPass:'облачный пароль не установлен',
+    set:'установить',cloudPassSet:'облачный пароль установлен',change:'изменить',
+    enterCloudPass:'введите облачный пароль',confirm:'подтвердить',
+    noPosts:'нет постов',nothingFound:'ничего не найдено',userNotFound:'аккаунт не существует',wrongPass:'неверный пароль',claimTitle:'старый аккаунт без пароля - задай новый',oldAccHint:'старые гугл-входы больше не работают - зарегистрируйся заново',noNotifs:'нет уведомлений',noFriendsPM:'нет друзей для лс',
+    noMail:'нет писем',noFriends:'нет друзей',noIncomingReqs:'нет заявок',
+    error:'ошибка',from:'от',
+    nick:'ник',pass6:'пароль (6+)',uidPlace:'айди (uid)',pass:'пароль',
+    searchPlace:'поиск по постам...',writePost:'напиши пост',newRoom:'название новой комнаты',
+    msgPlace:'сообщение',friendEmail:'email друга',toEmail:'кому (email)',letter:'письмо',
+    newNick:'новый ник',oldPass:'текущий пароль',newPass6:'новый пароль (6+)',
+    newCloudPass:'новый облачный пароль',oldCloudPass:'текущий облачный пароль',
+    cloudPassPlace:'облачный пароль',
+    subscribe:'подписаться',unsubscribe:'отписаться',edit:'ред',delete:'удл',cancel:'отмена',
+    confirmDelete:'удалить пост?',likedYourPost:' лайкнул твой пост',subscribed:' подписался на вас',
+    socnet:'соцсеть',comments:'комментарии',writeComment:'напиши комментарий',noComments:'нет комментариев',
+    bank:'банк',tixBalance:'баланс tix',transfer:'перевести tix',transferUid:'uid получателя',transferAmount:'сколько tix',myNfts:'мои NFT',shop:'магазин',currencyHint:'10 tix = лайк, 20 tix = подписка',buy:'купить',bought:'куплено',alreadyOwned:'уже куплено',nftBought:'куплено!',notEnoughTix:'не хватает tix',nftsEmpty:'у тебя пока нет nft',shareNft:'поделиться',shareNftTo:'кому отправить NFT',nftSent:'отправил тебе NFT',cancelVote:'отменить голос',nickAnim:'анимация ника',gradient:'градиент',grad1:'цвет 1',grad2:'цвет 2',applyGrad:'применить',hidePoll:'убрать опрос',pollQ:'вопрос опроса',pollOpt:'вариант',vote:'голос',votes:'голосов',topRich:'топ богачей',you:'ты',
+    transferOk:'переведено',transferFail:'нельзя себе или не хватает tix',
+    repost:'репост',openPost:'открыть пост',repostFrom:'репост от',forwardFrom:'переслано от',reply:'ответить',forward:'переслать',sendTo:'куда отправить',close:'закрыть',messageActions:'действия с сообщением',noMessages:'нет сообщений',pinned:'закреплено',pin:'закрепить',unpin:'открепить',pinOnlyOwner:'закреплять может только владелец',report:'пожаловаться',reports:'жалобы',reportReason:'причина',reportDone:'жалоба отправлена',hidePost:'скрыть пост',mentionedYou:' упомянул тебя',forwardedYourPost:' переслал твой пост',online:'онлайн',onlineTime:'время в сети',userSearch:'поиск пользователей',userSearchPlace:'ник, email или uid',addFriend:'добавить в друзья',cancelReq:'отмена заявки',inFriends:'уже в друзьях',darkTheme:'тёмная тема',lightTheme:'светлая тема',filters:'фильтры',fFriends:'только друзья',fMine:'мои посты',fPoll:'с опросами',fGrad:'с градиентом',sortBy:'сортировка',newFirst:'новые',oldFirst:'старые',byLikes:'по лайкам'
+  },
+  en:{
+    register:'Registration',registerBtn:'Register',done:'Done!',loginTitle:'Login by ID',loginBtn:'Login',
+    logout:'Logout',main:'Feed',profile:'Profile',chat:'Chat',friends:'Friends',mail:'Mail',notif:'Notifications',
+    settings:'Settings',search:'Search',reset:'Clear',send:'Send',subs:'Subscribers',totalLikes:'Total likes',
+    stories:'Stories',create:'Create',storyPlace:'Story text...',storyLimit:'Max 5 stories, live 24 hours',storyMade:'Story created',storyMax:'Max 5 stories',storyNoText:'Empty story',storyEmpty:'No stories',storyDelete:'Delete',storyBy:'Story from',storyExpired:'expired',viewStories:'View stories',
+    backToMy:'Back to my profile',userPosts:"User's posts",rooms:'Rooms',create:'Create',pm:'Private messages',
+    back:'Back',sendMsg:'Send',requests:'Requests',myFriends:'My friends',sendReq:'Send request',
+    incomingReqs:'Incoming requests',sendMail:'Send',mailbox:'Mailbox',closeMailbox:'Close',
+    privacy:'Privacy',language:'Language',emailLabel:'Email',changeNick:'Change nickname',
+    save:'Save',changePass:'Change password',cloudPass:'Cloud password',noCloudPass:'Cloud password not set',
+    set:'Set',cloudPassSet:'Cloud password set',change:'Change',
+    enterCloudPass:'Enter cloud password',confirm:'Confirm',
+    noPosts:'No posts',nothingFound:'Nothing found',userNotFound:'Account does not exist',wrongPass:'Wrong password',claimTitle:'Old account without password - set a new one',oldAccHint:'Old google logins no longer work - register a new account',noNotifs:'No notifications',noFriendsPM:'No friends for PM',
+    noMail:'No mail',noFriends:'No friends',noIncomingReqs:'No incoming requests',
+    error:'Error',from:'from',
+    nick:'Nickname',pass6:'Password (6+)',uidPlace:'User ID (uid)',pass:'Password',
+    searchPlace:'Search posts...',writePost:'Write a post',newRoom:'New room name',
+    msgPlace:'Message',friendEmail:"Friend's email",toEmail:'To (email)',letter:'Message',
+    newNick:'New nickname',oldPass:'Current password',newPass6:'New password (6+)',
+    newCloudPass:'New cloud password',oldCloudPass:'Current cloud password',
+    cloudPassPlace:'Cloud password',
+    subscribe:'Subscribe',unsubscribe:'Unsubscribe',edit:'Edit',delete:'Delete',cancel:'Cancel',
+    confirmDelete:'Delete post?',likedYourPost:' liked your post',subscribed:' subscribed to you',
+    socnet:'Social network',comments:'Comments',writeComment:'Write a comment',noComments:'No comments',
+    bank:'Bank',tixBalance:'Tix balance',transfer:'Transfer tix',transferUid:'Recipient uid',transferAmount:'How many tix',myNfts:'My NFTs',shop:'Shop',currencyHint:'10 tix = like, 20 tix = subscribe',buy:'Buy',bought:'Owned',alreadyOwned:'Already owned',nftBought:'Purchased!',notEnoughTix:'Not enough tix',nftsEmpty:'You have no NFTs yet',shareNft:'Share',shareNftTo:'Send NFT to',nftSent:'sent you an NFT',cancelVote:'Cancel vote',nickAnim:'Nickname animation',gradient:'Gradient',grad1:'color 1',grad2:'color 2',applyGrad:'Apply',hidePoll:'Hide poll',pollQ:'Poll question',pollOpt:'option',vote:'vote',votes:'votes',topRich:'Tix rich list',you:'you',
+    transferOk:'Sent',transferFail:'Cannot send to self or not enough tix',
+    repost:'Repost',openPost:'Open post',repostFrom:'Repost from',forwardFrom:'Forwarded from',reply:'Reply',forward:'Forward',sendTo:'Send to',close:'Close',messageActions:'Message actions',noMessages:'No messages',pinned:'Pinned',pin:'Pin',unpin:'Unpin',pinOnlyOwner:'Only the owner can pin',report:'Report',reports:'Reports',reportReason:'Reason',reportDone:'Report sent',hidePost:'Hide post',mentionedYou:' mentioned you',forwardedYourPost:' forwarded your post',online:'online',onlineTime:'time online',userSearch:'Search users',userSearchPlace:'nick, email or uid',addFriend:'Add friend',cancelReq:'Cancel request',inFriends:'Already friends',darkTheme:'Dark theme',lightTheme:'Light theme',filters:'Filters',fFriends:'Friends only',fMine:'My posts',fPoll:'With polls',fGrad:'With gradient',sortBy:'Sort',newFirst:'Newest',oldFirst:'Oldest',byLikes:'Most liked'
+  }
+};
+
+function t(k){return (lang[cl]&&lang[cl][k])||lang.ru[k]||k}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function showNick(n){return esc(nickName(n))}
+function nickName(n){return n==null?'?':n}
+function gcol(g,i){if(g==null)return null;if(g.length!==undefined)return g[i];return g[String(i)]}
+function gradCss(g){return (g&&gcol(g,0)&&gcol(g,1))?'background:linear-gradient(135deg,'+gcol(g,0)+','+gcol(g,1)+');color:#fff;border-radius:6px;padding:4px 10px;font-weight:bold':null}
+function hashPass(p){
+  let v=2166136261;
+  for(let i=0;i<p.length;i++){v^=p.charCodeAt(i);v=Math.imul(v,16777619)>>>0}
+  v^=v>>>13;v=Math.imul(v,1274126178)>>>0;v^=v>>>16;
+  return 'h'+v.toString(36);
+}
+
+function setLang(l){cl=l;localStorage.setItem('lang',l);document.getElementById('langSelect').value=l;applyLang()}
+function applyLang(){
+  document.querySelectorAll('[data-lang]').forEach(el=>el.textContent=t(el.getAttribute('data-lang')));
+  document.querySelectorAll('[data-lang-placeholder]').forEach(el=>el.placeholder=t(el.getAttribute('data-lang-placeholder')));
+  let nb=document.getElementById('tabNotifBtn');nb.textContent=un?t('notif')+' +'+un:t('notif');
+  let tb=document.getElementById('themeBtn');if(tb)tb.textContent=document.body.classList.contains('dark')?t('lightTheme'):t('darkTheme');
+}
+
+function err(m){document.getElementById('error').textContent=m}
+function settingsMsg(m){document.getElementById('settingsMsg').textContent=m}
+function mailErr(m){document.getElementById('mailError').textContent=m}
+function cloudMsg(m){document.getElementById('cloudMsg').textContent=m}
+function friendMsg(m){document.getElementById('friendReqMsg').textContent=m}
+function bankMsg(m){document.getElementById('bankMsg').textContent=m}
+function shopMsg(m){document.getElementById('shopMsg').textContent=m}
+
+function switchSubSettings(name){
+  ['subProfile','subPrivacy','subLanguage'].forEach(id=>document.getElementById(id).style.display=id==='sub'+name.charAt(0).toUpperCase()+name.slice(1)?'block':'none')
+}
+function switchSubFriends(name){
+  document.getElementById('subFriendsList').style.display=name==='list'?'block':'none';
+  document.getElementById('subFriendsRequests').style.display=name==='requests'?'block':'none';
+  if(name==='list')loadFriends();if(name==='requests')loadRequests();
+}
+
+function loadNotifs(){
+  if(!cu)return;
+  fetch(DB+'/notifications/'+cu+'.json').then(r=>r.json()).then(d=>{
+    let l=document.getElementById('notifList');
+    if(!d){l.innerHTML='<div>'+t('noNotifs')+'</div>';return}
+    let a=Object.keys(d).map(k=>({id:k,...d[k]})).sort((a,b)=>(b.time||0)-(a.time||0));
+    l.innerHTML=a.map(n=>{
+      let txt=n.text;
+      if(n.type==='like')txt=n.fromNick+t('likedYourPost');
+      if(n.type==='subscribe')txt=n.fromNick+t('subscribed');
+      return '<div style="border:1px solid #999;margin:4px 0;padding:6px">'+txt+' <span style="font-size:11px;color:#666">'+new Date(n.time).toLocaleString()+'</span></div>'
+    }).join('');
+    if(document.getElementById('tabNotif').style.display==='none'){un=a.length;document.getElementById('tabNotifBtn').textContent=un?t('notif')+' +'+un:t('notif')}
+  }).catch(()=>{})
+}
+
+function loadDMList(){
+  if(!cu)return;
+  fetch(DB+'/users/'+cu+'/friends.json').then(r=>r.json()).then(fs=>{
+    let c=document.getElementById('dmList');c.innerHTML='';
+    if(!fs||!Object.keys(fs).length){c.innerHTML='<div style="color:#999">'+t('noFriendsPM')+'</div>';return}
+    Promise.all(Object.keys(fs).map(uid=>fetch(DB+'/users/'+uid+'.json').then(r=>r.json()).then(u=>({uid,nick:u?u.nick:'?'}))))
+    .then(arr=>arr.forEach(u=>{
+      let id='dm_'+[cu,u.uid].sort().join('_');
+      let b=document.createElement('button');b.type='button';b.style='display:block;width:100%;margin:4px 0;text-align:left';
+      b.innerHTML='<b>'+u.nick+'</b>';b.onclick=()=>openDM(id,u.nick);c.appendChild(b);
+    }))
+  }).catch(()=>{})
+}
+function openDM(id,nk){cdi=id;cci=null;curRoom=null;
+  document.getElementById('chatListSection').style.display='none';document.getElementById('chatRoomSection').style.display='block';
+  document.getElementById('currentChatTitle').textContent=t('pm')+': '+nk;
+  clearInterval(clt);clt=null;clearInterval(cmt);cmt=null;loadDMMessages();loadPinned();if(dmt)clearInterval(dmt);dmt=setInterval(()=>{loadDMMessages();loadPinned()},3000)
+}
+function loadDMMessages(){
+  if(!cdi)return;
+  loadPinned();
+  fetch(DB+'/'+cdi+'.json').then(r=>r.json()).then(d=>{
+    let c=document.getElementById('chatMessages');c.innerHTML='';
+    if(!d||!Object.keys(d).length){c.innerHTML='<div style="color:#999;padding:8px">'+t('noMessages')+'</div>';return}
+    Object.keys(d).map(k=>({id:k,...d[k]})).sort((a,b)=>(a.time||0)-(b.time||0)).forEach(m=>{
+      c.appendChild(msgEl(m))
+    })
+  }).catch(()=>{})
+}
+function msgEl(m){
+  let b=document.createElement('button');b.type='button';b.style='display:block;width:100%;margin:4px 0;text-align:left;border:1px solid #eee;background:#fff';
+  let fwd='',rp='',fh='';
+  if(m.fwdFrom)fwd='<div style="background:#f8f8f8;border:1px solid #ddd;padding:2px 6px;font-size:12px">'+t('forwardFrom')+' <b>'+showNickFor(m.uid,m.fwdFrom)+'</b></div>';
+  if(m.replyTo)rp='<div style="background:#f8f8f8;border:1px solid #ddd;padding:2px 6px;font-size:12px">'+t('reply')+': <b>'+showNickFor(m.replyToUid,m.replyTo)+'</b></div>';
+  if(m.repFrom)fh='<div style="background:#f0f0f0;padding:2px 4px;font-size:12px">'+t('repostFrom')+' <b>'+showNickFor(m.repUid,m.repNick||'?')+'</b><br>'+esc(String(m.repText||'').slice(0,200))+' <span style="color:blue;cursor:pointer" onclick="event.stopPropagation();openRepostLink(\''+esc(m.repPid||'')+'\')">'+t('openPost')+'</span></div>';
+  b.innerHTML=fwd+rp+fh+'<b>'+showNickFor(m.uid,m.nick)+'</b>: '+(gradCss(m.grad)?'<span style="'+gradCss(m.grad)+'">'+mentionHtml(m.text)+'</span>':mentionHtml(m.text));
+  if(m.time){let tv=document.createElement('div');tv.style.fontSize='12px';tv.textContent=new Date(m.time).toLocaleString();b.appendChild(tv)}
+  b.onclick=()=>openActionModal(m);
+  return b;
+}
+
+function switchTab(name){
+  if(name==='profile')showProfile(null);
+  ['main','profile','chat','friends','mail','notif','stories','shop','bank','top','reports','settings'].forEach(n=>document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1)).style.display=n===name?'block':'none');
+  if(name!=='mail'){document.getElementById('inbox').style.display='none';document.getElementById('mailboxBtn').style.display='block';clearInterval(mt);mt=null}
+  if(name==='chat'){
+    document.getElementById('chatListSection').style.display='block';document.getElementById('chatRoomSection').style.display='none';
+    clearInterval(cmt);cmt=null;clearInterval(dmt);dmt=null;cci=null;cdi=null;loadChatList();loadDMList();
+    if(clt)clearInterval(clt);clt=setInterval(()=>{loadChatList();loadDMList()},3000)
+  }else{clearInterval(clt);clearInterval(cmt);clearInterval(dmt);clt=null;cmt=null;dmt=null}
+  if(name==='notif'){un=0;document.getElementById('tabNotifBtn').textContent=t('notif');loadNotifs();if(nt)clearInterval(nt);nt=setInterval(loadNotifs,5000)}
+  else{clearInterval(nt);nt=null}
+  if(name==='stories')loadStories();
+  if(name==='bank'){loadTix();loadMyNfts()}
+  if(name==='shop')loadShop();
+  if(name==='top')loadTop();
+  if(name==='reports')loadReports();
+  if(name==='friends'){loadFriends();loadRequests()}
+}
+
+function showNickFor(uid,nick){return esc(nick==null?'?':nick)}
+function mentionHtml(txt){
+  let s=String(txt==null?'':txt);
+  return s.replace(/@([\p{L}\p{N}_]+)/gu,function(m,n){
+    return '<span style="color:#07c;cursor:pointer" onclick="event.stopPropagation();goMention(\''+esc(n)+'\')">@'+esc(n)+'</span>'
+  })
+}
+function goMention(nk){
+  fetch(DB+'/users.json').then(r=>r.json()).then(us=>{
+    if(!us)return;
+    for(let u in us){if(us[u].nick&&us[u].nick.toLowerCase()===nk.toLowerCase()){switchTab('profile');showProfile(u);return}}
+  }).catch(()=>{})
+}
+function notifyMentions(text,extra){
+  if(!cu||!text)return;
+  let m=String(text).match(/@([\p{L}\p{N}_]+)/gu)||[];
+  m.forEach(tok=>{
+    let name=tok.slice(1);
+    fetch(DB+'/users.json').then(r=>r.json()).then(us=>{
+      if(!us)return;
+      for(let u in us){
+        let uu=us[u];
+        if(uu&&uu.nick&&uu.nick.toLowerCase()===name.toLowerCase()&&u!==cu){
+          let ntext=extra&&extra.fwdTo?cn+t('forwardedYourPost'):cn+t('mentionedYou')+': @'+name;
+          fetch(DB+'/notifications/'+u+'.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from:cu,fromNick:cn,type:'mention',text:ntext,time:Date.now()})}).catch(()=>{})
+        }
+      }
+    }).catch(()=>{})
+  })
+}
+function loadReports(){
+  if(!cu)return;
+  let vip=VIP.includes(cu);
+  if(!vip){let rtb=document.getElementById('tabReportsBtn');if(rtb)rtb.style.display='none';return}
+  let c=document.getElementById('reportsList');if(!c)return;
+  fetch(DB+'/reports.json').then(r=>r.json()).then(d=>{
+    c.innerHTML='';
+    if(!d||!Object.keys(d).length){c.innerHTML='<div style="color:#999">'+t('noReports')+'</div>';return}
+    Object.keys(d).map(k=>({id:k,...d[k]})).sort((a,b)=>(b.time||0)-(a.time||0)).forEach(r=>{
+      let post=allP.find(p=>p.id===r.pid);
+      let postText=post?post.text.slice(0,120):(r.pText||'');
+      let row=document.createElement('div');row.style='border:1px solid #999;margin:6px 0;padding:8px';
+      row.innerHTML='<div><b>'+esc(r.fromNick||'?')+'</b> <span style="font-size:11px;color:#666">'+new Date(r.time).toLocaleString()+'</span></div><div style="color:#a33">'+t('reportReason')+': '+esc(r.reason||'')+'</div><div style="font-size:12px;color:#666;margin:4px 0">'+esc(postText)+'</div>';
+      let del=document.createElement('button');del.textContent=t('delete');del.style='margin-right:6px';
+      del.onclick=()=>{if(!confirm(t('confirmDelete')))return;fetch(DB+'/posts/'+r.pid+'.json',{method:'DELETE'}).catch(()=>{});fetch(DB+'/reports/'+r.id+'.json',{method:'DELETE'}).then(()=>loadReports()).catch(()=>{});fetchPosts();loadReports()};
+      row.appendChild(del);
+      let dim=document.createElement('button');dim.textContent=t('hidePost');dim.style='margin-right:6px';
+      dim.onclick=()=>{hiddenPosts.add(r.pid);fetch(DB+'/reports/'+r.id+'.json',{method:'DELETE'}).then(()=>loadReports()).catch(()=>{});fetchPosts();loadReports()};
+      row.appendChild(dim);
+      let cls=document.createElement('button');cls.textContent=t('close');
+      cls.onclick=()=>{fetch(DB+'/reports/'+r.id+'.json',{method:'DELETE'}).then(()=>loadReports()).catch(()=>{})};
+      row.appendChild(cls);
+      c.appendChild(row)
+    })
+  }).catch(()=>{})
+}
+function loadNickAnims(){fetch(DB+'/users.json').then(r=>r.json()).then(us=>{if(!us)return;loadPosts();if(cci)loadChatMessages();if(cdi)loadDMMessages();openC.forEach(id=>renderComments(id))}).catch(()=>{})}
+function showProfile(uid){cvu=uid||null;document.getElementById('profileBackBtn').style.display=cvu?'inline':'none';loadProfileData()}
+function loadProfileData(){
+  let tu=cvu||cu;if(!tu)return;
+  fetch(DB+'/users/'+tu+'.json').then(r=>r.json()).then(u=>{
+    if(!u)return;
+    document.getElementById('profileNickAndBadge').textContent=u.nick||'?';
+    let peo=document.getElementById('profileOnline');
+    fetch(DB+'/users/'+tu+'/lastSeen.json').then(r=>r.json()).then(ls=>{
+      if(peo)peo.textContent=t('online')+(isOnline(ls)?' ✅':' - '+new Date(ls||0).toLocaleString())
+    }).catch(()=>{});
+    fetch(DB+'/users/'+tu+'/onlineMinutes.json').then(r=>r.json()).then(m=>{
+      if(peo)peo.textContent=(peo.textContent||'')+' | '+t('onlineTime')+': '+(Math.floor((m||0)/60))+' ч '+((m||0)%60)+' мин'
+    }).catch(()=>{});
+    document.getElementById('profileSubs').textContent=t('subs')+': '+(u.subscribers?Object.keys(u.subscribers).length:0);
+    let tl=0;allP.forEach(p=>{if(p.uid===tu&&p.likes)tl+=Object.keys(p.likes).length});
+    document.getElementById('profileTotalLikes').textContent=t('totalLikes')+': '+tl;
+    let sb=document.getElementById('profileSubBtn');
+    if(cvu&&cvu!==cu&&cu){sb.style.display='inline';sb.textContent=subs.has(cvu)?t('unsubscribe'):t('subscribe');sb.onclick=()=>toggleSubscribe()}
+    else sb.style.display='none';
+    let psb=document.getElementById('profileStoriesBtn');
+    if(cvu&&cvu!==cu){
+      fetch(DB+'/stories.json').then(r=>r.json()).then(sd=>{
+        let now=Date.now(),has=false;
+        if(sd)Object.keys(sd).forEach(k=>{if(sd[k].uid===cvu&&now-(sd[k].time||0)<86400000)has=true});
+        psb.style.display=has?'inline':'none'
+      }).catch(()=>{psb.style.display='none'})
+    }else psb.style.display='none';
+    let up=allP.filter(p=>p.uid===tu).sort((a,b)=>(b.time||0)-(a.time||0));
+    let c=document.getElementById('profilePosts');c.innerHTML='';
+    if(!up.length){c.innerHTML='<div style="color:#999;padding:8px">'+t('noPosts')+'</div>';return}
+    up.forEach(p=>{
+      let d=document.createElement('div');d.style='border:1px solid #999;margin:6px 0;padding:8px';
+      d.innerHTML='<div><b>'+showNickFor(p.uid,p.nick||'?')+'</b> <span style="font-size:12px;color:#666">'+new Date(p.time).toLocaleString()+'</span></div><div style="margin:6px 0;white-space:pre-wrap">'+p.text+'</div>';
+      let l=p.likes||{},lc=Object.keys(l).length,lk=l[cu]?true:false;
+      let lb=document.createElement('button');lb.textContent=(lk?'♥ ':'♡ ')+lc;lb.onclick=()=>toggleLike(p.id,lk);d.appendChild(lb);
+      if(p.uid===cu){
+        let eb=document.createElement('button');eb.textContent=t('edit');eb.style='margin-left:6px';eb.onclick=()=>editPost(p.id,d);d.appendChild(eb);
+        let db=document.createElement('button');db.textContent=t('delete');db.style='margin-left:4px';db.onclick=()=>deletePost(p.id);d.appendChild(db)
+      }
+      c.appendChild(d)
+    })
+  }).catch(()=>{})
+}
+function toggleSubscribe(){
+  if(!cu||!cvu||cvu===cu)return;
+  if(subs.has(cvu)){
+    fetch(DB+'/users/'+cvu+'/subscribers/'+cu+'.json',{method:'DELETE'}).catch(()=>{});
+    fetch(DB+'/users/'+cu+'/subscriptions/'+cvu+'.json',{method:'DELETE'}).catch(()=>{});
+    subs.delete(cvu);document.getElementById('profileSubBtn').textContent=t('subscribe')
+  }else{
+    fetch(DB+'/users/'+cvu+'/subscribers/'+cu+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'}).catch(()=>{});
+    fetch(DB+'/users/'+cu+'/subscriptions/'+cvu+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'}).catch(()=>{});
+    subs.add(cvu);document.getElementById('profileSubBtn').textContent=t('unsubscribe');
+    fetch(DB+'/users/'+cvu+'/subRewarded/'+cu+'.json').then(r=>r.json()).then(rw=>{
+      if(!rw)Promise.all([
+        fetch(DB+'/users/'+cvu+'/subRewarded/'+cu+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'}),
+        addTix(cvu,SUB_REWARD)
+      ]).catch(()=>{})
+    }).catch(()=>{});
+    fetch(DB+'/notifications/'+cvu+'.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from:cu,fromNick:cn,type:'subscribe',text:cn+t('subscribed'),time:Date.now()})}).catch(()=>{})
+  }
+  loadProfileData()
+}
+function loadSubscriptions(){if(!cu)return;fetch(DB+'/users/'+cu+'/subscriptions.json').then(r=>r.json()).then(d=>{subs.clear();if(d)Object.keys(d).forEach(u=>subs.add(u))}).catch(()=>{})}
+
+function enterMain(uid,nick,email){
+  cu=uid;cn=nick;ce=email;
+  let vip=VIP.includes(uid);
+  ['gradPostBtn','gradChatBtn'].forEach(id=>{let el=document.getElementById(id);if(el)el.style.display=vip?'inline':'none'});
+  let nab=document.getElementById('nickAnimBtn');if(nab)nab.style.display=vip?'inline':'none';
+  let trb=document.getElementById('tabReportsBtn');if(trb)trb.style.display=vip?'inline':'none';
+  document.getElementById('showEmail').textContent=email;document.getElementById('showUid').textContent=uid;
+  document.getElementById('authScreen').style.display='none';document.getElementById('mainScreen').style.display='block';
+  cl=localStorage.getItem('lang')||'ru';document.getElementById('langSelect').value=cl;applyLang();
+  switchTab('main');updateOnline();setInterval(updateOnline,60000);loadPosts();loadNickAnims();checkCloudPassStatus(uid);loadRequests();loadSubscriptions();loadTix();loadShop();loadReports();loadFriendsSet();applyTheme();
+  fetch(DB+'/users/'+cu+'/sessionStart.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(Date.now())}).catch(()=>{});
+}
+function updateOnline(){if(!cu)return;fetch(DB+'/users/'+cu+'/lastSeen.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(Date.now())}).catch(()=>{});
+  fetch(DB+'/users/'+cu+'/onlineMinutes.json').then(r=>r.json()).then(m=>{fetch(DB+'/users/'+cu+'/onlineMinutes.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify((m||0)+1)}).catch(()=>{})}).catch(()=>{})}
+function isOnline(ls){return ls?(Date.now()-ls)<300000:false}
+function checkCloudPassStatus(uid){fetch(DB+'/users/'+uid+'/cloudPass.json').then(r=>r.json()).then(d=>{
+  if(d){document.getElementById('cloudPassSection').style.display='none';document.getElementById('cloudPassChangeSection').style.display='block'}
+  else{document.getElementById('cloudPassSection').style.display='block';document.getElementById('cloudPassChangeSection').style.display='none'}
+}).catch(()=>{})}
+
+function cacheUser(uid,d){try{let db=dbL();db.users=db.users||{};db.users[uid]=d;dbS(db)}catch(e){}}
+function getCachedUser(uid){try{return dbL().users?dbL().users[uid]:null}catch(e){return null}}
+function register(){
+  let n=document.getElementById('regNick').value.trim(),p=document.getElementById('regPass').value;
+  if(!n||!p){err(t('error'));return}if(p.length<6){err(t('error')+': pass 6+');return}
+  let e=n.toLowerCase().replace(/ /g,'')+Date.now()+'@mail.com';
+  let uid='u'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+  let rec={nick:n,email:e,time:Date.now(),lastSeen:Date.now(),tix:0,passHash:hashPass(p)};
+  cacheUser(uid,rec);
+  fetch(DB+'/users/'+uid+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(rec)})
+  .then(()=>{document.getElementById('uidSpan').textContent=uid;document.getElementById('regOk').style.display='block';err('');enterMain(uid,n,e)})
+  .catch(e=>err(t('error')+': '+e.message))
+}
+function login(){
+  let uid=document.getElementById('logId').value.trim(),p=document.getElementById('logPass').value;
+  if(!uid||!p){err(t('error'));return}
+  fetch(DB+'/users/'+uid+'.json').then(r=>r.json()).then(d=>{
+    if((!d||d.error)&&offlineMode){let c=getCachedUser(uid);if(c)d=c}
+    if(!d||d.error){err(t('error')+': '+t('userNotFound')+' - '+t('oldAccHint'));return}
+    if(offlineMode){err(t('error')+': нет связи с Firebase - такой хостинг блокирует запросы. Запускай через файл или на github pages');return}
+    if(!d.passHash){
+      if(d.pass&&d.pass===p){
+        fetch(DB+'/users/'+uid+'/passHash.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(hashPass(p))}).then(()=>{
+          document.getElementById('logPass').value='';cacheUser(uid,d);enterMain(uid,d.nick,d.email)
+        }).catch(()=>{err(t('error'))})
+      }else{
+        pcu=uid;document.getElementById('claimSection').style.display='block';document.getElementById('claimErr').textContent='';err(t('claimTitle'))
+      }
+      return
+    }
+    if(hashPass(p)!==d.passHash){err(t('error')+': '+t('wrongPass'));return}
+    document.getElementById('logId').value='';document.getElementById('logPass').value='';
+    cacheUser(uid,d);
+    enterMain(uid,d.nick,d.email)
+  }).catch(e=>err(t('error')+': '+e.message))
+}
+function checkCloudPass(){
+  let ip=document.getElementById('cloudPassInput').value;if(!ip||!pu)return;
+  fetch(DB+'/users/'+pu+'/cloudPass.json').then(r=>r.json()).then(rp=>{
+    if(ip===rp){document.getElementById('cloudPassModal').style.display='none';enterMain(pu,pn,pe);pu=null}
+    else document.getElementById('cloudPassError').textContent=t('error')+': wrong pass'
+  }).catch(()=>{document.getElementById('cloudPassError').textContent=t('error')})
+}
+function logout(){
+  cu=null;cn='';ce='';pu=null;
+  clearInterval(pt);clearInterval(mt);clearInterval(clt);clearInterval(cmt);clearInterval(nt);clearInterval(dmt);
+  pt=mt=clt=cmt=nt=dmt=null;
+  document.getElementById('authScreen').style.display='block';document.getElementById('mainScreen').style.display='none';document.getElementById('cloudPassModal').style.display='none'
+}
+
+function addTix(uid,a){fetch(DB+'/users/'+uid+'/tix.json').then(r=>r.json()).then(cur=>{let nv=(cur||0)+a;fetch(DB+'/users/'+uid+'/tix.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(nv)}).then(()=>{if(uid===cu){tix=nv;if(document.getElementById('tixBalance'))document.getElementById('tixBalance').textContent=nv}}).catch(()=>{})}).catch(()=>{})}
+function loadTix(){if(!cu)return;fetch(DB+'/users/'+cu+'/tix.json').then(r=>r.json()).then(d=>{tix=d||0;document.getElementById('tixBalance').textContent=tix;let se=document.getElementById('shopTix');if(se)se.textContent=tix}).catch(()=>{})}
+const NFTS=[
+  {id:'n1',name:'золотой куб',icon:'\u25A0',color:'#f1c40f',price:100},
+  {id:'n2',name:'алый ромб',icon:'\u25C6',color:'#e74c3c',price:150},
+  {id:'n3',name:'изумрудное кольцо',icon:'\u25CF',color:'#2ecc71',price:200},
+  {id:'n4',name:'сапфировая звезда',icon:'\u2605',color:'#2980b9',price:250},
+  {id:'n5',name:'черный бриллиант',icon:'\u25C6',color:'#111',price:500}
+];
+function shopPrice(id){let n=NFTS.find(x=>x.id===id);return n?n.price:0}
+function loadShop(){
+  if(!cu)return;
+  loadTix();
+  fetch(DB+'/nfts/'+cu+'.json').then(r=>r.json()).then(own=>{
+    let c=document.getElementById('shopList');c.innerHTML='';
+    let pown=own?Object.keys(own):[];
+    NFTS.forEach(n=>{
+      let owned=pown.includes(n.id);
+      let b=document.createElement('div');b.style='border:1px solid #999;margin:6px 0;padding:10px';
+      b.innerHTML='<div style="font-size:26px;color:'+n.color+'">'+n.icon+'</div><b>'+esc(n.name)+'</b> <span style="color:#666">('+n.price+' tix)</span>';
+      let btn=document.createElement('button');
+      if(owned){btn.textContent=t('bought');btn.disabled=true}
+      else{btn.textContent=t('buy')+' ('+n.price+')';btn.onclick=()=>buyNft(n.id)}
+      b.appendChild(btn);
+      c.appendChild(b)
+    })
+  }).catch(()=>{document.getElementById('shopList').innerHTML=t('error')})
+}
+function buyNft(id){
+  if(!cu)return;
+  let p=shopPrice(id);if(!p){shopMsg(t('error'));return}
+  if(tix<p){shopMsg(t('notEnoughTix'));return}
+  fetch(DB+'/nfts/'+cu+'/'+id+'.json').then(r=>r.json()).then(own=>{
+    if(own){shopMsg(t('alreadyOwned'));return}
+    fetch(DB+'/nfts/'+cu+'/'+id+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'})
+    .then(()=>Promise.all([
+      fetch(DB+'/users/'+cu+'/tix.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(tix-p)}),
+      fetch(DB+'/nftsReceipts/'+cu+'/'+id+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({bought:Date.now()})})
+    ])).then(()=>{tix-=p;shopMsg(t('nftBought'));loadShop()}).catch(()=>{shopMsg(t('error'))})
+  }).catch(()=>{shopMsg(t('error'))})
+}
+function loadMyNfts(){
+  if(!cu)return;
+  fetch(DB+'/nfts/'+cu+'.json').then(r=>r.json()).then(own=>{
+    let c=document.getElementById('myNftList');c.innerHTML='';
+    if(!own||!Object.keys(own).length){c.innerHTML='<div style="color:#999;padding:8px">'+t('nftsEmpty')+'</div>';return}
+    let list=Object.keys(own);
+    c.innerHTML='<p style="font-size:14px"><b>'+list.length+'</b></p>';
+    list.forEach(id=>{
+      let n=NFTS.find(x=>x.id===id);if(!n)return;
+      let d=document.createElement('div');d.style='border:1px solid #999;margin:6px 0;padding:10px';
+      d.innerHTML='<div style="font-size:26px;color:'+n.color+'">'+n.icon+'</div><b>'+esc(n.name)+'</b>';
+      let sb=document.createElement('button');sb.textContent=t('shareNft');sb.onclick=()=>openNftShare(id);d.appendChild(sb);
+      c.appendChild(d)
+    })
+  }).catch(()=>{document.getElementById('myNftList').innerHTML=t('error')})
+}
+function openNftShare(id){
+  let n=NFTS.find(x=>x.id===id);if(!n)return;
+  let sb=document.createElement('div');
+  sb.style='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);padding:24px;overflow:auto;z-index:999';
+  let h='<div style="background:#111;color:#eee;max-width:420px;margin:0 auto;padding:16px;border-radius:8px">';
+  h+='<div style="display:flex;justify-content:space-between;align-items:center"><b>'+esc(n.name)+'</b><button onclick="document.getElementById(\'nftShareModal\').remove()" style="background:#333;color:#fff;border:none;padding:4px 10px;border-radius:4px">'+t('close')+'</button></div>';
+  h+='<p style="font-size:12px;color:#888">'+t('shareNftTo')+'</p>';
+  h+='<div id="nftShareList"></div></div>';
+  sb.id='nftShareModal';sb.innerHTML=h;
+  document.body.appendChild(sb);
+  fetch(DB+'/users/'+cu+'/friends.json').then(r=>r.json()).then(fs=>{
+    let list=document.getElementById('nftShareList');if(!list)return;
+    if(!fs||!Object.keys(fs).length){list.innerHTML='<div style="color:#999">'+t('noFriends')+'</div>';return}
+    let ids=Object.keys(fs);
+    Promise.all(ids.map(uid=>fetch(DB+'/users/'+uid+'.json').then(r=>r.json()).then(u=>({uid,nick:u?u.nick:'?'}))))
+    .then(arr=>arr.forEach(u=>{
+      let b=document.createElement('button');b.type='button';b.style='display:block;width:100%;margin:4px 0;text-align:left';
+      b.textContent=u.nick;b.onclick=()=>{shareNft(id,u.uid);sb.remove()};list.appendChild(b)
+    }))
+  }).catch(()=>{})
+}
+function shareNft(id,toUid){
+  if(!cu||!toUid||toUid===cu)return;
+  let n=NFTS.find(x=>x.id===id);if(!n)return;
+  let price=n.price;
+  fetch(DB+'/nfts/'+cu+'/'+id+'.json',{method:'DELETE'}).then(()=>{
+    Promise.all([
+      fetch(DB+'/nftsReceipts/'+toUid+'/'+id+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({from:cu,fromNick:cn,time:Date.now()})}),
+      addTix(toUid,price),
+      fetch(DB+'/notifications/'+toUid+'.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from:cu,fromNick:cn,type:'nft',text:cn+t('nftSent')+': '+n.name+' (+'+price+' tix)',time:Date.now()})})
+    ]).then(()=>loadMyNfts()).catch(()=>{})
+  }).catch(()=>{})
+}
+function transferTix(){
+  if(!cu)return;
+  let u=document.getElementById('transferUid').value.trim(),a=parseInt(document.getElementById('transferAmount').value);
+  if(!u||!a||a<1){bankMsg(t('error'));return}
+  if(u===cu){bankMsg(t('transferFail'));return}
+  if(a>tix){bankMsg(t('transferFail'));return}
+  fetch(DB+'/users.json').then(r=>r.json()).then(us=>{
+    if(us&&us[u])Promise.all([
+      fetch(DB+'/users/'+cu+'/tix.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(tix-a)}),
+      addTix(u,a)
+    ]).then(()=>{tix-=a;document.getElementById('tixBalance').textContent=tix;bankMsg(t('transferOk'));document.getElementById('transferUid').value='';document.getElementById('transferAmount').value=''}).catch(()=>{bankMsg(t('error'))})
+    else bankMsg(t('error')+': user not found')
+  }).catch(()=>{bankMsg(t('error'))})
+}
+
+function togglePollBar(){
+  let b=document.getElementById('pollBar');
+  b.style.display=b.style.display==='none'?'block':'none';
+  document.getElementById('pollToggleBtn').textContent=b.style.display==='none'?t('addPoll'):t('hidePoll')
+}
+let gradPost=null,gradChat=null;
+function toggleGradBar(kind){
+  let b=document.getElementById(kind==='post'?'gradPostBar':'gradChatBar');
+  b.style.display=b.style.display==='none'?'block':'none'
+}
+function applyGrad(kind){
+  let c1=document.getElementById(kind==='post'?'gradPost1':'gradChat1').value;
+  let c2=document.getElementById(kind==='post'?'gradPost2':'gradChat2').value;
+  if(kind==='post')gradPost=[c1,c2];else gradChat=[c1,c2];
+  let l=document.getElementById(kind==='post'?'gradPostLabel':'gradChatLabel');
+  l.textContent=c1+' -> '+c2;
+  document.getElementById(kind==='post'?'gradPostBar':'gradChatBar').style.display='none'
+}
+function clearGrad(kind){
+  if(kind==='post')gradPost=null;else gradChat=null;
+  let l=document.getElementById(kind==='post'?'gradPostLabel':'gradChatLabel');
+  if(l)l.textContent='';
+  document.getElementById(kind==='post'?'gradPostBar':'gradChatBar').style.display='none'
+}
+function addPollOpt(){
+  let d=document.createElement('input');d.className='pollOpt';d.placeholder=t('pollOpt');d.style='width:60%;margin:2px 0';
+  let br=document.createElement('br');
+  document.getElementById('pollOpts').appendChild(d);document.getElementById('pollOpts').appendChild(br)
+}
+function loadTop(){
+  if(!cu)return;
+  fetch(DB+'/users.json').then(r=>r.json()).then(us=>{
+    let c=document.getElementById('topList');c.innerHTML='';
+    if(!us){c.innerHTML='<div style="color:#999">'+t('nothingFound')+'</div>';return}
+    let arr=Object.keys(us).map(u=>({uid:u,nick:us[u].nick||'?',tix:us[u].tix||0})).filter(x=>x.tix>0).sort((a,b)=>b.tix-a.tix).slice(0,20);
+    if(!arr.length){c.innerHTML='<div style="color:#999">'+t('nothingFound')+'</div>';return}
+    arr.forEach((x,i)=>{
+      let d=document.createElement('div');d.style='border:1px solid #999;margin:4px 0;padding:8px;display:flex;align-items:center';
+      let place=i===0?'\u{1F947}':(i===1?'\u{1F948}':(i===2?'\u{1F949}':'#'+(i+1)));
+      let name=esc(x.nick)+(x.uid===cu?' ('+t('you')+')':'');
+      d.innerHTML='<span style="margin-right:8px;font-weight:bold">'+place+'</span><b>'+name+'</b><span style="margin-left:auto;font-weight:bold">'+x.tix+' tix</span>';
+      c.appendChild(d)
+    })
+  }).catch(()=>{document.getElementById('topList').innerHTML=t('error')})
+}
+function addPost(){
+  let t=document.getElementById('postText').value.trim();
+  if(!t||!cu)return;
+  let poll=null;
+  let q=document.getElementById('pollQ').value.trim();
+  if(q){
+    let opts=[].slice.call(document.querySelectorAll('.pollOpt')).map(o=>o.value.trim()).filter(Boolean);
+    if(opts.length>=2)poll={q:q,opts:opts,votes:{}}
+  }
+  let body={uid:cu,nick:cn,text:t,time:Date.now(),likes:{}};
+  if(poll)body.poll=poll;
+  if(gradPost&&VIP.includes(cu)){body.grad=gradPost;gradPost=null;clearGrad('post')}
+  notifyMentions(t);
+  fetch(DB+'/posts.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(()=>{
+    document.getElementById('postText').value='';
+    document.getElementById('pollQ').value='';
+    document.querySelectorAll('.pollOpt').forEach(o=>o.value='');
+    document.getElementById('pollBar').style.display='none'
+  }).catch(()=>{})
+}
+function loadPosts(){fetchPosts();if(pt)clearInterval(pt);pt=setInterval(fetchPosts,3000)}
+function fetchPosts(){
+  let fEl=document.activeElement;
+  if(fEl&&fEl.id&&(fEl.id.indexOf('cinput_')===0||fEl.id==='editArea'))return;
+  fetch(DB+'/posts.json').then(r=>r.json()).then(d=>{
+    if(!d){allP=[];renderPosts();return}
+    allP=Object.keys(d).map(k=>({id:k,...d[k]})).sort((a,b)=>(b.time||0)-(a.time||0));renderPosts();loadReports();
+    if(document.getElementById('tabProfile').style.display==='block')loadProfileData()
+  }).catch(()=>{})
+}
+function renderPosts(){
+  let feed=document.getElementById('feed');
+  let fEl=document.activeElement,fId=(fEl&&fEl.id&&fEl.id.indexOf('cinput_')===0)?fEl.id:null,fVal=fEl?fEl.value:'';
+  feed.innerHTML='';
+  let arr=(sq?allP.filter(p=>p.text.toLowerCase().includes(sq)):allP).filter(p=>!hiddenPosts.has(p.id));
+  if(filters.mine&&cu)arr=arr.filter(p=>p.uid===cu);
+  if(filters.friends&&cu)arr=arr.filter(p=>p.uid===cu||fset.has(p.uid));
+  if(filters.poll)arr=arr.filter(p=>p.poll);
+  if(filters.grad)arr=arr.filter(p=>p.grad);
+  if(filters.sort==='old')arr=arr.slice().sort((a,b)=>(a.time||0)-(b.time||0));
+  if(filters.sort==='likes')arr=arr.slice().sort((a,b)=>Object.keys(b.likes||{}).length-Object.keys(a.likes||{}).length);
+  arr.forEach(p=>{
+    let d=document.createElement('div');d.style='border:1px solid #999;margin:6px 0;padding:8px';
+    d.innerHTML='<div><b>'+showNickFor(p.uid,p.nick)+'</b> <span style="font-size:12px;color:#666">'+new Date(p.time).toLocaleString()+'</span></div><div style="margin:6px 0;white-space:pre-wrap">'+(gradCss(p.grad)?'<span style="'+gradCss(p.grad)+'">'+mentionHtml(p.text)+'</span>':mentionHtml(p.text))+'</div>';
+    if(p.poll){
+      let pollHtml='<div style="border:1px solid #ccc;padding:8px;margin:6px 0;background:#fafafa"><b>'+esc(p.poll.q)+'</b>';
+      let v=p.poll.votes||{},my=v[cu];
+      p.poll.opts.forEach((o,i)=>{
+        let cnt=Object.keys(v).filter(k=>v[k]===i).length,total=Object.keys(v).length;
+        let pct=total?Math.round(cnt/total*100):0;
+        let mine=(my===i)?'style="border:2px solid #4d0;font-weight:bold"':'style="width:100%;text-align:left;padding:6px;border:1px solid #bbb;background:#fff"';
+        pollHtml+='<div style="margin:6px 0"><button onclick="votePoll(\''+p.id+'\','+i+')" '+mine+'>'+esc(o)+' <span style="color:#666">'+cnt+' ('+pct+'%)</span>'+(my===i?' ✓':'')+'</button></div>'
+      });
+      pollHtml+='<div style="font-size:11px;color:#888">'+Object.keys(v).length+' '+t('votes')+'</div>';
+      if(my!==undefined)pollHtml+='<div style="margin:4px 0"><button onclick="unvotePoll(\''+p.id+'\')" style="font-size:12px;border:1px solid #c66;color:#c33;background:#fff">'+t('cancelVote')+'</button></div>';
+      pollHtml+='</div>';
+      let poEl=document.createElement('div');poEl.innerHTML=pollHtml;d.appendChild(poEl)
+    }
+    let l=p.likes||{},lc=Object.keys(l).length,lk=l[cu]?true:false;
+    let lb=document.createElement('button');lb.textContent=(lk?'♥ ':'♡ ')+lc;lb.style='margin-right:6px';lb.onclick=()=>toggleLike(p.id,lk);d.appendChild(lb);
+    let pb=document.createElement('button');pb.textContent=t('profile');pb.style='margin-right:6px';pb.onclick=()=>{switchTab('profile');showProfile(p.uid)};d.appendChild(pb);
+    if(p.uid!==cu&&cu){
+      let sb=document.createElement('button');
+      sb.textContent=subs.has(p.uid)?t('unsubscribe'):t('subscribe');
+      sb.onclick=()=>{
+        if(subs.has(p.uid)){
+          fetch(DB+'/users/'+p.uid+'/subscribers/'+cu+'.json',{method:'DELETE'}).catch(()=>{});
+          fetch(DB+'/users/'+cu+'/subscriptions/'+p.uid+'.json',{method:'DELETE'}).catch(()=>{});
+          subs.delete(p.uid);sb.textContent=t('subscribe')
+        }else{
+          fetch(DB+'/users/'+p.uid+'/subscribers/'+cu+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'}).catch(()=>{});
+          fetch(DB+'/users/'+cu+'/subscriptions/'+p.uid+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'}).catch(()=>{});
+          subs.add(p.uid);sb.textContent=t('unsubscribe');
+          fetch(DB+'/users/'+p.uid+'/subRewarded/'+cu+'.json').then(r=>r.json()).then(rw=>{
+            if(!rw)Promise.all([
+              fetch(DB+'/users/'+p.uid+'/subRewarded/'+cu+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'}),
+              addTix(p.uid,SUB_REWARD)
+            ]).catch(()=>{})
+          }).catch(()=>{});
+          fetch(DB+'/notifications/'+p.uid+'.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from:cu,fromNick:cn,type:'subscribe',text:cn+t('subscribed'),time:Date.now()})}).catch(()=>{})
+        }
+      };d.appendChild(sb)
+    }
+    if(p.uid===cu){
+      let eb=document.createElement('button');eb.textContent=t('edit');eb.style='margin-left:6px';eb.onclick=()=>editPost(p.id,d);d.appendChild(eb);
+      let db=document.createElement('button');db.textContent=t('delete');db.style='margin-left:4px';db.onclick=()=>deletePost(p.id);d.appendChild(db)
+    }
+    else{
+      let rb2=document.createElement('button');rb2.textContent=t('report');rb2.style='margin-left:6px';rb2.onclick=()=>reportPost(p);d.appendChild(rb2)
+    }
+    let cb=document.createElement('button');cb.textContent=t('comments');cb.style='margin-left:6px';cb.onclick=()=>toggleComments(p.id,d);d.appendChild(cb);
+    let rb=document.createElement('button');rb.textContent=t('repost');rb.style='margin-left:6px';rb.onclick=()=>{pendingRepost={pid:p.id,nick:p.nick,uid:p.uid,text:p.text,time:p.time};openPickModal('repost')};d.appendChild(rb);
+    let cw=document.createElement('div');cw.style='display:none;margin-top:8px;border-top:1px solid #ccc;padding-top:6px';cw.id='cw_'+p.id;
+    let cl=document.createElement('div');cl.id='cl_'+p.id;cw.appendChild(cl);
+    let ci=document.createElement('div');ci.style='margin-top:6px';
+    let inp=document.createElement('input');inp.id='cinput_'+p.id;inp.placeholder=t('writeComment');inp.style='width:70%';
+    let sbtn=document.createElement('button');sbtn.textContent=t('send');sbtn.onclick=()=>addComment(p.id);ci.appendChild(inp);ci.appendChild(sbtn);cw.appendChild(ci);
+    d.appendChild(cw);
+    feed.appendChild(d);
+    if(openC.has(p.id)){cw.style.display='block';renderComments(p.id)}
+  });
+  if(!arr.length)feed.innerHTML='<div style="color:#999;padding:12px">'+t('nothingFound')+'</div>'
+  if(fId){let nel=document.getElementById(fId);if(nel){nel.value=fVal;nel.focus();}}
+  if(pendingScroll){let pe=document.getElementById('cw_'+pendingScroll);if(pe){pe.style.display='block';openC.add(pendingScroll);renderComments(pendingScroll);pe.scrollIntoView({block:'center'})}pendingScroll=null}
+}
+function editPost(id,div){
+  let td=div.childNodes[1],ot=td.textContent;
+  let inp=document.createElement('textarea');inp.id='editArea';inp.value=ot;inp.style='width:100%;margin:6px 0';
+  td.replaceWith(inp);
+  let sb=document.createElement('button');sb.textContent=t('save');sb.onclick=function(){let nt=inp.value.trim();if(!nt)return;fetch(DB+'/posts/'+id+'/text.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(nt)}).then(()=>fetchPosts()).catch(()=>{})};
+  div.insertBefore(sb,div.lastChild);
+  let cb=document.createElement('button');cb.textContent=t('cancel');cb.onclick=function(){fetchPosts()};div.insertBefore(cb,div.lastChild);
+  inp.focus();inp.scrollIntoView({block:'center'})
+}
+function deletePost(id){if(!confirm(t('confirmDelete')))return;fetch(DB+'/posts/'+id+'.json',{method:'DELETE'}).then(()=>fetchPosts()).catch(()=>{})}
+function toggleLike(id,lk){
+  if(!cu)return;
+  if(lk){fetch(DB+'/posts/'+id+'/likes/'+cu+'.json',{method:'DELETE'}).then(()=>fetchPosts()).catch(()=>{})}
+  else{
+    fetch(DB+'/posts/'+id+'/likes/'+cu+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'})
+    .then(()=>{fetch(DB+'/posts/'+id+'/uid.json').then(r=>r.json()).then(ou=>{if(ou&&ou!==cu)
+      fetch(DB+'/users/'+ou+'/likeRewarded/'+id+'_'+cu+'.json').then(r=>r.json()).then(rw=>{
+        if(!rw)Promise.all([
+          fetch(DB+'/users/'+ou+'/likeRewarded/'+id+'_'+cu+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'}),
+          addTix(ou,LIKE_REWARD)
+        ]).catch(()=>{})
+      }).catch(()=>{});
+      fetch(DB+'/notifications/'+ou+'.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from:cu,fromNick:cn,type:'like',text:cn+t('likedYourPost'),time:Date.now()})}).catch(()=>{})}).catch(()=>{});fetchPosts()}).catch(()=>{})
+  }
+}
+function toggleComments(id,div){
+  let cw=document.getElementById('cw_'+id);
+  if(openC.has(id)){openC.delete(id);if(cw)cw.style.display='none'}
+  else{openC.add(id);if(cw){cw.style.display='block';renderComments(id)}}
+}
+let _cmap={};
+function renderComments(id){
+  let c=document.getElementById('cl_'+id);if(!c)return;
+  if(cCache[id]!==undefined)c.innerHTML=cCache[id];
+  fetch(DB+'/comments/'+id+'.json').then(r=>r.json()).then(d=>{
+    let h='';_cmap={};
+    if(d)Object.keys(d).map(k=>({id:k,...d[k]})).sort((a,b)=>(a.time||0)-(b.time||0)).forEach((m,idx)=>{
+      _cmap[idx]=m;
+      let fh='';
+      if(m.repFrom){fh='<div style="background:#f0f0f0;padding:2px 4px;font-size:12px">'+t('repostFrom')+' <b>'+showNickFor(m.repUid,m.repNick||'?')+'</b><br>'+esc(String(m.repText||'').slice(0,200))+' <span style="color:blue;cursor:pointer" onclick="event.stopPropagation();openRepostLink(\''+esc(m.repPid||'')+'\')">'+t('openPost')+'</span></div>'}
+      let fwd='';
+      if(m.fwdFrom){fwd='<div style="background:#f8f8f8;border:1px solid #ddd;padding:2px 6px;font-size:12px">'+t('forwardFrom')+' <b>'+showNickFor(m.uid,m.fwdFrom)+'</b></div>'}
+      let rp='';
+      if(m.replyTo){rp='<div style="background:#f8f8f8;border:1px solid #ddd;padding:2px 6px;font-size:12px">'+t('reply')+': <b>'+showNickFor(m.replyToUid,m.replyTo)+'</b></div>'}
+      h+='<div style="border:1px solid #eee;margin:4px 0;padding:4px;cursor:pointer" onclick="openActionModal(_cmap['+idx+'])">'+fwd+rp+fh+'<b>'+showNickFor(m.uid,m.nick)+'</b>: '+mentionHtml(m.text)+'<div style="font-size:12px;color:#666">'+new Date(m.time).toLocaleString()+'</div></div>'
+    });
+    let html=h||'<div style="color:#999">'+t('noComments')+'</div>';
+    cCache[id]=html;
+    if(openC.has(id))c.innerHTML=html
+  }).catch(()=>{if(openC.has(id))c.innerHTML=cCache[id]||t('error')})
+}
+function addComment(id){let v=document.getElementById('cinput_'+id);if(!v)return;let x=v.value.trim();if(!x||!cu)return;
+  fetch(DB+'/comments/'+id+'.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({uid:cu,nick:cn,text:x,time:Date.now()})}).then(()=>{v.value='';renderComments(id)}).catch(()=>{})
+}
+function reportPost(p){
+  if(!cu||!p)return;
+  let reason=prompt(t('reportReason'));
+  if(!reason||!reason.trim())return;
+  fetch(DB+'/reports.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pid:p.id,from:cu,fromNick:cn,reason:reason.trim(),pText:p.text,time:Date.now()})}).then(()=>{alert(t('reportDone'))}).catch(()=>{})
+}
+function toggleFilters(){let p=document.getElementById('filterPanel');if(p)p.style.display=p.style.display==='none'?'block':'none'}
+function loadFriendsSet(){if(!cu)return;fetch(DB+'/users/'+cu+'/friends.json').then(r=>r.json()).then(d=>{fset.clear();if(d)Object.keys(d).forEach(u=>fset.add(u))}).catch(()=>{})}
+function toggleTheme(){
+  document.body.classList.toggle('dark');
+  localStorage.setItem('dark',document.body.classList.contains('dark')?'1':'0');
+  let b=document.getElementById('themeBtn');if(b)b.textContent=document.body.classList.contains('dark')?t('lightTheme'):t('darkTheme')
+}
+function applyTheme(){
+  if(localStorage.getItem('dark')==='1')document.body.classList.add('dark');
+  let b=document.getElementById('themeBtn');if(b)b.textContent=document.body.classList.contains('dark')?t('lightTheme'):t('darkTheme')
+}
+function syncFilters(){
+  filters.friends=document.getElementById('fFriends').checked;
+  filters.mine=document.getElementById('fMine').checked;
+  filters.poll=document.getElementById('fPoll').checked;
+  filters.grad=document.getElementById('fGrad').checked;
+  filters.sort=document.getElementById('fSort').value;
+  renderPosts()
+}
+function searchPosts(){
+  sq=document.getElementById('searchInput').value.trim().toLowerCase();
+  syncFilters()
+}
+function votePoll(pid,opt){
+  if(!cu)return;
+  fetch(DB+'/posts/'+pid+'/poll.json').then(r=>r.json()).then(poll=>{
+    if(!poll)return;
+    let v=poll.votes||{};
+    if(v[cu]!==undefined){fetchPosts();return}
+    v[cu]=opt;
+    fetch(DB+'/posts/'+pid+'/poll/votes.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(v)}).then(()=>fetchPosts()).catch(()=>{})
+  }).catch(()=>{})
+}
+function unvotePoll(pid){
+  if(!cu)return;
+  fetch(DB+'/posts/'+pid+'/poll.json').then(r=>r.json()).then(poll=>{
+    if(!poll)return;
+    let v=poll.votes||{};
+    if(v[cu]===undefined){fetchPosts();return}
+    delete v[cu];
+    fetch(DB+'/posts/'+pid+'/poll/votes.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(v)}).then(()=>fetchPosts()).catch(()=>{})
+  }).catch(()=>{})
+}
+function clearSearch(){sq='';document.getElementById('searchInput').value='';renderPosts()}
+function loadStories(){
+  fetch(DB+'/stories.json').then(r=>r.json()).then(d=>{
+    let feed=document.getElementById('storiesFeed');
+    let now=Date.now();
+    if(!d){feed.innerHTML='<div style="color:#999;padding:12px">'+t('storyEmpty')+'</div>';return}
+    let arr=Object.keys(d).map(k=>({id:k,...d[k]})).filter(s=>now-(s.time||0)<86400000);
+    if(!arr.length){feed.innerHTML='<div style="color:#999;padding:12px">'+t('storyEmpty')+'</div>';return}
+    let by={};
+    arr.forEach(s=>{(by[s.uid]=by[s.uid]||[]).push(s)});
+    let h='';
+    Object.keys(by).forEach(uid=>{
+      h+='<div style="border:1px solid #999;margin:8px 0;padding:8px"><b>'+esc(by[uid][0].nick||'?')+'</b> <span style="font-size:11px;color:#666">'+by[uid].length+'</span>';
+      by[uid].sort((a,b)=>(b.time||0)-(a.time||0)).forEach(s=>{
+        let can=(s.uid===cu)||(uid==='NO_MY'&&false);
+        h+='<div style="background:#f5f5f5;border:1px solid #ddd;margin:4px 0;padding:6px;font-size:14px">'+esc(s.text)+' <span style="font-size:11px;color:#888">'+new Date(s.time).toLocaleString()+'</span>';
+        if(s.uid===cu)h+=' <button onclick="deleteStory(\''+s.id+'\')" style="margin-left:6px">'+t('storyDelete')+'</button>';
+        h+='</div>'
+      });
+      h+='</div>'
+    });
+    feed.innerHTML=h
+  }).catch(()=>{})
+}
+function deleteStory(id){if(!cu)return;fetch(DB+'/stories/'+id+'.json',{method:'DELETE'}).then(()=>loadStories()).catch(()=>{})}
+function viewUserStories(){if(!cvu)return;openStoriesViewer(cvu,cu===cvu?cn:null)}
+function openStoriesViewer(uid,nick){
+  fetch(DB+'/stories.json').then(r=>r.json()).then(d=>{
+    let now=Date.now(),arr=[];
+    if(d)Object.keys(d).forEach(k=>{let s=d[k];if(s.uid===uid&&now-(s.time||0)<86400000)arr.push({id:k,...s})});
+    if(!arr.length)return;
+    arr.sort((a,b)=>(b.time||0)-(a.time||0));
+    let nickName=nick;
+    if(!nickName)nickName=arr[0].nick||'?';
+    let sb=document.createElement('div');
+    sb.id='storyViewer';
+    sb.style='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);padding:24px;overflow:auto;z-index:999';
+    let h='<div style="background:#111;color:#eee;max-width:520px;margin:0 auto;padding:16px;border-radius:8px">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center"><b>'+esc(nickName)+'</b><button onclick="document.getElementById(\'storyViewer\').remove()" style="background:#333;color:#fff;border:none;padding:4px 10px;border-radius:4px">'+t('close')+'</button></div>';
+    arr.forEach(s=>{
+      h+='<div style="background:#1c1c1c;border:1px solid #333;margin:10px 0;padding:14px;border-radius:6px;font-size:16px">'+esc(s.text)+'<div style="font-size:11px;color:#888;margin-top:6px">'+new Date(s.time).toLocaleString()+'</div></div>'
+    });
+    h+='</div>';
+    sb.innerHTML=h;
+    document.body.appendChild(sb)
+  }).catch(()=>{})
+}
+function addStory(){
+  let v=document.getElementById('storyText').value.trim();
+  let sm=document.getElementById('storyMsg');
+  if(!v){sm.textContent=t('storyNoText');return}
+  if(!cu){sm.textContent=t('error');return}
+  fetch(DB+'/stories.json').then(r=>r.json()).then(d=>{
+    let my=0;if(d)Object.keys(d).forEach(k=>{if(d[k].uid===cu&&Date.now()-(d[k].time||0)<86400000)my++});
+    if(my>=5){sm.textContent=t('storyMax');return}
+    fetch(DB+'/stories.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({uid:cu,nick:cn,text:v,time:Date.now()})}).then(()=>{
+      document.getElementById('storyText').value='';sm.textContent=t('storyMade');loadStories()
+    }).catch(e=>{sm.textContent=t('error')+': '+e.message})
+  }).catch(()=>{sm.textContent=t('error')})
+}
+function openActionModal(m){
+  actMsg=m;
+  document.getElementById('actFrom').textContent=(m.nick||'?')+': '+(m.text||'');
+  document.getElementById('pinBtn').style.display=(cci||cdi)?'inline':'none';
+  document.getElementById('actionModal').style.display='block'
+}
+function closeActionModal(){document.getElementById('actionModal').style.display='none';actMsg=null}
+function replyToMsg(){let m=actMsg;closeActionModal();replyCtx={nick:m?m.nick:'',uid:m?m.uid:null};document.getElementById('chatCtxLabel').style.display='block';document.getElementById('chatCtxLabel').textContent=t('reply')+': '+(m?m.nick:'');document.getElementById('chatInput').focus()}
+function fwdMsg(){let m=actMsg;closeActionModal();pendingFwd={nick:m.nick,text:m.text};openPickModal('fwd')}
+function closePickModal(){document.getElementById('pickModal').style.display='none';pickKind=null}
+function openPickModal(kind){
+  pickKind=kind;
+  document.getElementById('pickModal').style.display='block';
+  let list=document.getElementById('pickList');list.innerHTML='';
+  let add=function(label,target){
+    let b=document.createElement('button');b.type='button';b.style='display:block;width:100%;margin:4px 0;text-align:left';
+    b.textContent=label;b.onclick=()=>{doPick(target);closePickModal()};list.appendChild(b)
+  };
+  let cnt=0;
+  let done=function(){if(!cnt)list.innerHTML='<div style="color:#999;padding:8px">'+t('nothingFound')+'</div>'};
+  fetch(DB+'/chatRooms.json').then(r=>r.json()).then(d=>{if(d)Object.keys(d).map(k=>({id:k,...d[k]})).forEach(r=>{cnt++;add(t('chat')+': '+r.name,{type:'chat',id:r.id,name:r.name})});done()}).catch(()=>{done()});
+  fetch(DB+'/users/'+cu+'/friends.json').then(r=>r.json()).then(fs=>{
+    if(!fs){done();return}
+    let ids=Object.keys(fs);
+    if(!ids.length){done();return}
+    Promise.all(ids.map(uid=>fetch(DB+'/users/'+uid+'.json').then(r=>r.json()).then(u=>({uid,nick:u?u.nick:'?'}))))
+    .then(arr=>{arr.forEach(u=>{cnt++;add(t('pm')+': '+u.nick,{type:'dm',id:'dm_'+[cu,u.uid].sort().join('_'),name:u.nick})});done()})
+  }).catch(()=>{done()})
+}
+function doPick(target){
+  let key=Date.now()+'_'+Math.random().toString(36).slice(2,7);
+  if(pickKind==='repost'&&pendingRepost){
+    let m={uid:cu,nick:cn,text:'',time:Date.now(),repFrom:true,repPid:pendingRepost.pid,repNick:pendingRepost.nick,repUid:pendingRepost.uid,repText:pendingRepost.text};
+    writePick(target,key,m);pendingRepost=null
+  }
+  if(pickKind==='fwd'&&pendingFwd){
+    let m={uid:cu,nick:cn,text:pendingFwd.text,time:Date.now(),fwdFrom:pendingFwd.nick};
+    writePick(target,key,m);pendingFwd=null
+  }
+}
+function writePick(target,key,m){
+  let pr=(target.type==='dm')?fetch(DB+'/'+target.id+'/'+key+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(m)})
+    :fetch(DB+'/chatMessages/'+target.id+'/'+key+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(m)});
+  pr.then(()=>{switchTab('chat');if(target.type==='dm')openDM(target.id,target.name);else joinChat(target.id,target.name)}).catch(()=>{})
+}
+function openRepostLink(pid){
+  let p=allP.find(x=>x.id===pid);
+  if(!p)return;
+  if(cmt)clearInterval(cmt);cmt=null;if(dmt)clearInterval(dmt);dmt=null;
+  cci=null;cdi=null;
+  switchTab('main');
+  let el=document.getElementById('cinput_'+p.id);
+  if(!el){sq=p.text;renderPosts()}
+  else{pendingScroll=p.id;renderPosts()}
+}
+
+function changeNick(){let n=document.getElementById('newNick').value.trim();if(!n||!cu){settingsMsg(t('error'));return}
+  fetch(DB+'/users/'+cu+'/nick.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(n)}).then(()=>{cn=n;settingsMsg('ok');document.getElementById('newNick').value=''}).catch(e=>settingsMsg(t('error')+': '+e.message))}
+function changePass(){let o=document.getElementById('oldPass').value,n=document.getElementById('newPass').value;if(!o||!n){settingsMsg(t('error'));return}if(n.length<6){settingsMsg(t('error')+': 6+');return}
+  fetch(DB+'/users/'+cu+'/passHash.json').then(r=>r.json()).then(rp=>{if(hashPass(o)!==rp){settingsMsg(t('error')+': wrong pass');return}
+    return fetch(DB+'/users/'+cu+'/passHash.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(hashPass(n))}).then(()=>{settingsMsg('ok');document.getElementById('oldPass').value='';document.getElementById('newPass').value=''})}).catch(()=>{settingsMsg(t('error'))})}
+function setCloudPass(){let p=document.getElementById('newCloudPass').value;if(!p||!cu){cloudMsg(t('error'));return}if(p.length<6){cloudMsg(t('error')+': 6+');return}
+  fetch(DB+'/users/'+cu+'/cloudPass.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)}).then(()=>{cloudMsg('ok');document.getElementById('newCloudPass').value='';checkCloudPassStatus(cu)}).catch(e=>cloudMsg(t('error')+': '+e.message))}
+function changeCloudPass(){let o=document.getElementById('oldCloudPass').value,n=document.getElementById('changeCloudPass').value;if(!o||!n){cloudMsg(t('error'));return}if(n.length<6){cloudMsg(t('error')+': 6+');return}
+  fetch(DB+'/users/'+cu+'/cloudPass.json').then(r=>r.json()).then(rp=>{if(o!==rp){cloudMsg(t('error'));return}
+    return fetch(DB+'/users/'+cu+'/cloudPass.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(n)}).then(()=>{cloudMsg('ok');document.getElementById('oldCloudPass').value='';document.getElementById('changeCloudPass').value='';checkCloudPassStatus(cu)})}).catch(e=>cloudMsg(t('error')+': '+e.message))}
+
+function openMailbox(){document.getElementById('mailboxBtn').style.display='none';document.getElementById('inbox').style.display='block';loadInbox();if(mt)clearInterval(mt);mt=setInterval(loadInbox,3000)}
+function hideInbox(){document.getElementById('inbox').style.display='none';document.getElementById('mailboxBtn').style.display='block';clearInterval(mt);mt=null}
+function sendMail(){let t=document.getElementById('mailTo').value.trim(),x=document.getElementById('mailText').value.trim();if(!t||!x){mailErr(t('error'));return}if(!cu){mailErr(t('error'));return}mailErr('');
+  fetch(DB+'/messages.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from:ce,fromNick:cn,to:t,text:x,time:Date.now()})}).then(()=>{document.getElementById('mailTo').value='';document.getElementById('mailText').value='';loadInbox()}).catch(e=>mailErr(t('error')+': '+e.message))}
+function loadInbox(){if(!ce)return;
+  fetch(DB+'/messages.json').then(r=>r.json()).then(d=>{let l=document.getElementById('mailList'),h='';if(d){let a=Object.keys(d).map(k=>({id:k,...d[k]})).filter(m=>m.to===ce).sort((a,b)=>(a.time||0)-(b.time||0));a.forEach(m=>{h+='<div style="border:1px solid #999;margin:4px 0;padding:4px"><b>from:</b> '+(m.fromNick||m.from||'?')+'<br><b>to:</b> '+(m.to||'?')+'<br>'+(m.text||'')+'</div>'})}l.innerHTML=h||t('noMail')}).catch(()=>{})}
+
+function loadChatList(){fetch(DB+'/chatRooms.json').then(r=>r.json()).then(d=>{let c=document.getElementById('chatList');c.innerHTML='';if(!d)return;Object.keys(d).map(k=>({id:k,...d[k]})).forEach(r=>{let b=document.createElement('button');b.type='button';b.style='display:block;width:100%;margin:4px 0;text-align:left';b.innerHTML='<b>'+r.name+'</b> ('+t('from')+' '+r.creatorNick+')';b.onclick=()=>joinChat(r.id,r.name);c.appendChild(b)})}).catch(()=>{})}
+function createChat(){let n=document.getElementById('newChatName').value.trim();if(!n||!cu)return;fetch(DB+'/chatRooms.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,creatorUid:cu,creatorNick:cn,time:Date.now()})}).then(r=>r.json()).then(d=>{document.getElementById('newChatName').value='';loadChatList();joinChat(d.name,n)}).catch(()=>{})}
+function joinChat(id,name){cci=id;cdi=null;curRoom={id:id,name:name};document.getElementById('chatListSection').style.display='none';document.getElementById('chatRoomSection').style.display='block';document.getElementById('currentChatTitle').textContent=t('chat')+': '+name;clearInterval(clt);clt=null;clearInterval(dmt);dmt=null;loadChatMessages();if(cmt)clearInterval(cmt);cmt=setInterval(loadChatMessages,3000)}
+function updateChatInputLabel(){let l=document.getElementById('chatCtxLabel');l.style.display=(replyCtx||fwdData)?'block':'none';l.textContent=(replyCtx?t('reply')+': '+replyCtx.nick:'')+(fwdData?t('forwardFrom')+': '+fwdData.nick:'')}
+function leaveChat(){cci=null;cdi=null;replyCtx=null;fwdData=null;updateChatInputLabel();document.getElementById('chatListSection').style.display='block';document.getElementById('chatRoomSection').style.display='none';clearInterval(cmt);cmt=null;clearInterval(dmt);dmt=null;loadChatList();loadDMList();if(clt)clearInterval(clt);clt=setInterval(()=>{loadChatList();loadDMList()},3000)}
+function sendChatMsg(){let t=document.getElementById('chatInput').value.trim();if((!cci&&!cdi)||!t||!cu)return;let p=cdi||('chatMessages/'+cci);
+  let m={uid:cu,nick:cn,text:t,time:Date.now()};
+  if(gradChat&&VIP.includes(cu)){m.grad=gradChat;gradChat=null;clearGrad('chat')}
+  if(replyCtx){m.replyTo=replyCtx.nick;m.replyToUid=replyCtx.uid||null;replyCtx=null;updateChatInputLabel()}
+  if(fwdData){m.fwdFrom=fwdData.nick;m.fwdText=fwdData.text;fwdData=null;updateChatInputLabel()}
+  let key='m'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+  fetch(DB+'/'+p+'/'+key+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(m)}).then(()=>{document.getElementById('chatInput').value='';if(cdi)loadDMMessages();else loadChatMessages()}).catch(()=>{})}
+function loadChatMessages(){if(!cci)return;loadPinned();fetch(DB+'/chatMessages/'+cci+'.json').then(r=>r.json()).then(d=>{let c=document.getElementById('chatMessages');c.innerHTML='';if(!d||!Object.keys(d).length){c.innerHTML='<div style="color:#999;padding:8px">'+t('noMessages')+'</div>';return}Object.keys(d).map(k=>({id:k,...d[k]})).sort((a,b)=>(a.time||0)-(b.time||0)).forEach(m=>{c.appendChild(msgEl(m))})}).catch(()=>{})}
+
+
+function sendFriendRequest(){let e=document.getElementById('friendEmail').value.trim();if(!e||!cu){friendMsg(t('error'));return}friendMsg('')
+  fetch(DB+'/users.json').then(r=>r.json()).then(us=>{let tu=null;if(us){for(let u in us){if(us[u].email===e){tu=u;break}}}if(!tu){friendMsg(t('error')+': not found');return}if(tu===cu){friendMsg(t('error'));return}
+    fetch(DB+'/users/'+cu+'/friends.json').then(r=>r.json()).then(fs=>{if(fs&&fs[tu]){friendMsg(t('error')+': already');return}
+      fetch(DB+'/users/'+tu+'/friendRequests.json').then(r=>r.json()).then(rq=>{if(rq){for(let k in rq){if(rq[k].fromUid===cu){friendMsg(t('error')+': sent');return}}}
+        fetch(DB+'/users/'+tu+'/friendRequests.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fromUid:cu,fromNick:cn,fromEmail:ce,time:Date.now()})}).then(()=>{friendMsg('ok');document.getElementById('friendEmail').value='';loadRequests()})
+      })
+    })
+  }).catch(e=>friendMsg(t('error')+': '+e.message))}
+function loadRequests(){if(!cu)return;fetch(DB+'/users/'+cu+'/friendRequests.json').then(r=>r.json()).then(d=>{let c=document.getElementById('incomingRequests'),cnt=0,h='';if(d){Object.keys(d).forEach(k=>{cnt++;let r=d[k];h+='<div style="border:1px solid #999;margin:4px 0;padding:4px"><b>'+r.fromNick+'</b> ('+r.fromEmail+') <button onclick="acceptRequest(\''+k+'\',\''+r.fromUid+'\')">'+t('confirm')+'</button> <button onclick="declineRequest(\''+k+'\')">'+t('cancel')+'</button></div>'})}c.innerHTML=h||t('noIncomingReqs');document.getElementById('tabFriendsBtn').textContent=cnt?t('friends')+' +'+cnt:t('friends')}).catch(()=>{})}
+function acceptRequest(k,fu){if(!cu)return;friendMsg('');Promise.all([fetch(DB+'/users/'+cu+'/friends/'+fu+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'}),fetch(DB+'/users/'+fu+'/friends/'+cu+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'}),fetch(DB+'/users/'+cu+'/friendRequests/'+k+'.json',{method:'DELETE'})]).then(()=>{loadRequests();loadFriends()}).catch(e=>friendMsg(t('error')+': '+e.message))}
+function declineRequest(k){if(!cu)return;fetch(DB+'/users/'+cu+'/friendRequests/'+k+'.json',{method:'DELETE'}).then(()=>loadRequests()).catch(e=>friendMsg(t('error')+': '+e.message))}
+
+
+function loadFriends(){if(!cu)return;fetch(DB+'/users/'+cu+'/friends.json').then(r=>r.json()).then(fs=>{let c=document.getElementById('friendsList');if(!fs||!Object.keys(fs).length){c.innerHTML=t('noFriends');return}let uids=Object.keys(fs);
+    fetch(DB+'/stories.json').then(r=>r.json()).then(sd=>{
+      let now=Date.now(),storyByUid={};
+      if(sd)Object.keys(sd).forEach(k=>{let s=sd[k];if(now-(s.time||0)<86400000)(storyByUid[s.uid]=storyByUid[s.uid]||[]).push({id:k,...s})});
+      Promise.all(uids.map(uid=>fetch(DB+'/users/'+uid+'.json').then(r=>r.json()).then(u=>({uid,nick:u?u.nick:'?'}))))
+      .then(arr=>{
+        c.innerHTML='';
+        arr.forEach(u=>{
+          let row=document.createElement('div');row.style='border:1px solid #999;margin:4px 0;padding:6px';
+          let b=document.createElement('button');b.type='button';b.style='display:block;width:100%;text-align:left';
+          b.innerHTML='<b>'+esc(u.nick)+'</b>';
+          b.onclick=()=>{switchTab('profile');showProfile(u.uid)};
+          row.appendChild(b);
+          if(storyByUid[u.uid]){
+            let sbtn=document.createElement('button');sbtn.textContent=t('viewStories');sbtn.style='margin:4px 0 0 0';
+            sbtn.onclick=()=>{event.stopPropagation();openStoriesViewer(u.uid,u.nick)};
+            row.appendChild(sbtn)
+          }
+          c.appendChild(row)
+        })
+      })
+    }).catch(()=>{c.innerHTML=t('error')})
+  }).catch(()=>{})}
+let curRoom=null;
+function pinPath(){return (cdi?('dmPins/'+cdi):(cci?('chatPins/'+cci):''))+'.json'}
+function loadPinned(){
+  let p=document.getElementById('pinnedBar');if(!p)return;
+  p.style.display='none';p.innerHTML='';
+  if(!cdi&&!cci)return;
+  fetch(DB+pinPath()).then(r=>r.json()).then(d=>{
+    if(!d){p.style.display='none';return}
+    let html='<div style="background:#fff8dc;border:1px solid #e0c060;padding:4px 8px;font-size:13px;margin-bottom:6px"><b>'+t('pinned')+':</b> <b>'+esc(d.nick||'')+'</b>: '+esc(d.text||'')+' <span style="font-size:11px;color:#888">'+new Date(d.time).toLocaleString()+'</span>';
+    let render=function(can){
+      if(can)html+=' <button onclick="unpinMsg()" style="margin-left:6px">'+t('unpin')+'</button>';
+      html+='</div>';
+      p.style.display='block';
+      p.innerHTML=html
+    };
+    if(cci){
+      fetch(DB+'/chatRooms/'+cci+'/creatorUid.json').then(r=>r.json()).then(co=>render(co===cu)).catch(()=>render(false))
+    }else render(true)
+  }).catch(()=>{})
+}
+function pinnedErr(){let p=document.getElementById('pinnedBar');if(p){p.style.display='block';p.innerHTML='<span style="color:red">'+t('pinOnlyOwner')+'</span>';setTimeout(()=>{p.style.display='none';p.innerHTML=''},3000)}}
+function pinMsg(){
+  if(!actMsg)return;
+  let m=actMsg;closeActionModal();
+  if(cdi){
+    fetch(DB+pinPath(),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({msgId:m.id,nick:m.nick,text:m.text,time:Date.now(),by:cu})}).then(()=>{loadDMMessages()}).catch(()=>{})
+  }else if(cci){
+    fetch(DB+'/chatRooms/'+cci+'/creatorUid.json').then(r=>r.json()).then(co=>{
+      if(co===cu)fetch(DB+pinPath(),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({msgId:m.id,nick:m.nick,text:m.text,time:Date.now(),by:cu})}).then(()=>loadChatMessages()).catch(()=>{});
+      else pinnedErr()
+    }).catch(()=>{})
+  }
+}
+function unpinMsg(){
+  if(cdi){fetch(DB+pinPath(),{method:'DELETE'}).then(()=>loadDMMessages()).catch(()=>{});return}
+  if(!cci)return;
+  fetch(DB+'/chatRooms/'+cci+'/creatorUid.json').then(r=>r.json()).then(co=>{
+    if(co===cu)fetch(DB+pinPath(),{method:'DELETE'}).then(()=>loadChatMessages()).catch(()=>{});
+    else pinnedErr()
+  }).catch(()=>{})
+}
+function searchUsers(){
+  let q=document.getElementById('userSearchInput').value.trim().toLowerCase();
+  let res=document.getElementById('userSearchResults');
+  if(!q){res.innerHTML='';return}
+  res.innerHTML=t('search')+'...';
+  fetch(DB+'/users.json').then(r=>r.json()).then(us=>{
+    if(!us){res.innerHTML='<div style="color:#999">'+t('nothingFound')+'</div>';return}
+    let arr=Object.keys(us).filter(uid=>uid!==cu&&((us[uid].nick&&us[uid].nick.toLowerCase().indexOf(q)>=0)||(us[uid].email&&us[uid].email.toLowerCase().indexOf(q)>=0)||uid.toLowerCase().indexOf(q)>=0));
+    if(!arr.length){res.innerHTML='<div style="color:#999">'+t('nothingFound')+'</div>';return}
+    Promise.all(arr.map(uid=>{
+      return fetch(DB+'/users/'+uid+'/friendRequests.json').then(r=>r.json()).then(rq=>{
+        let sent=null;if(rq){for(let k in rq)if(rq[k].fromUid===cu)sent=k}
+        return fetch(DB+'/users/'+cu+'/friends.json').then(r=>r.json()).then(fs=>({uid,u:us[uid],sent,isFriend:!!(fs&&fs[uid])}))
+      })
+    })).then(list=>{
+      res.innerHTML=list.map(x=>{
+        let btn;
+        if(x.isFriend)btn='<span style="color:green">'+t('inFriends')+'</span>';
+        else if(x.sent)btn='<button onclick="cancelSentReq(\''+x.uid+'\')">'+t('cancelReq')+'</button>';
+        else btn='<button onclick="sendReqByUid(\''+x.uid+'\')">'+t('addFriend')+'</button>';
+        return '<div style="border:1px solid #999;margin:4px 0;padding:6px"><b>'+esc(x.u.nick||'?')+'</b><div style="font-size:12px;color:#666">'+esc(x.u.email||'')+'</div><div style="font-size:11px;color:#999">'+esc(x.uid)+'</div>'+btn+'</div>'
+      }).join('')
+    })
+  }).catch(()=>{res.innerHTML=t('error')})
+}
+function sendReqByUid(uid){
+  if(!cu||uid===cu)return;
+  fetch(DB+'/users/'+uid+'/friendRequests.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fromUid:cu,fromNick:cn,fromEmail:ce,time:Date.now()})}).then(()=>searchUsers()).catch(()=>{})
+}
+function cancelSentReq(uid){
+  if(!cu)return;
+  fetch(DB+'/users/'+uid+'/friendRequests.json').then(r=>r.json()).then(rq=>{
+    if(!rq)return;
+    for(let k in rq){if(rq[k].fromUid===cu){fetch(DB+'/users/'+uid+'/friendRequests/'+k+'.json',{method:'DELETE'}).then(()=>searchUsers()).catch(()=>{});return}}
+  }).catch(()=>{})
+}
+</script>
+</body>
+</html>
