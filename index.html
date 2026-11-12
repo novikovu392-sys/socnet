@@ -2,6 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>соцсеть</title>
 <style>
 :root{--bg:#fff;--fg:#111;--soft:#666;--brd:#999;--card:#fff;--boxbg:#fafafa;--inp:#fff}
@@ -24,6 +25,15 @@ body.dark button[style*="background:#fff"]{background:#2a2a2a!important;color:va
 body.dark button[style*="background:#333"]{background:#3a3a3a!important}
 body.dark #filterPanel,body.dark #pollBar,body.dark #gradPostBar,body.dark #gradChatBar{background:var(--boxbg)}
 </style>
+
+<style>
+/* mobile responsiveness */
+#mainScreen > div:nth-child(2) { display: flex; flex-wrap: wrap; gap: 4px; }
+#authScreen { max-width: 360px; margin: 40px auto; padding: 16px; border: 1px solid #ccc; border-radius: 6px; background: var(--card); }
+#authScreen button { width: 100%; margin-top: 8px; }
+div[style*="max-width:400px"] { width: 92% !important; max-width: 100% !important; padding: 12px !important; box-sizing: border-box; }
+</style>
+
 </head>
 <body>
 
@@ -57,6 +67,7 @@ body.dark #filterPanel,body.dark #pollBar,body.dark #gradPostBar,body.dark #grad
     <button onclick="switchTab('mail')" id="tabMailBtn" data-lang="mail">почта</button>
     <button onclick="switchTab('notif')" id="tabNotifBtn" data-lang="notif">уведомления</button>
     <button onclick="switchTab('stories')" id="tabStoriesBtn" data-lang="stories">истории</button>
+    <button onclick="switchTab('channels')" id="tabChannelsBtn" data-lang="channels">каналы</button>
     <button onclick="switchTab('shop')" id="tabShopBtn" data-lang="shop">магазин</button>
     <button onclick="switchTab('bank')" id="tabBankBtn" data-lang="bank">банк</button>
     <button onclick="switchTab('top')" id="tabTopBtn" data-lang="topRich">топ богачей</button>
@@ -121,6 +132,8 @@ body.dark #filterPanel,body.dark #pollBar,body.dark #gradPostBar,body.dark #grad
         <button id="profileBackBtn" style="display:none" onclick="showProfile(null)" data-lang="backToMy">назад к моему профилю</button>
       </div>
       <hr>
+      <h4 data-lang="userStories">истории</h4>
+      <div id="profileStoriesList" style="margin:6px 0"></div>
       <h4 data-lang="userPosts">посты пользователя</h4>
       <div id="profilePosts"></div>
     </div>
@@ -150,6 +163,22 @@ body.dark #filterPanel,body.dark #pollBar,body.dark #gradPostBar,body.dark #grad
         <span id="gradChatLabel" style="font-size:12px;color:#666"></span>
       </div>
       <div><input id="chatInput" placeholder="сообщение" style="width:60%" data-lang-placeholder="msgPlace"><button onclick="sendChatMsg()" data-lang="sendMsg">отправить</button> <button onclick="toggleGradBar('chat')" id="gradChatBtn" data-lang="gradient" style="display:none">градиент</button></div>
+    </div>
+  </div>
+
+  <div id="tabChannels" style="display:none">
+    <div style="margin:8px 0">
+      <button onclick="switchSubChannels('global')" id="subChannelsGlobalBtn" data-lang="globalChats">глобальные чаты</button>
+      <button onclick="switchSubChannels('dm')" id="subChannelsDMBtn" data-lang="privateMessages">личные сообщения</button>
+      <button onclick="switchSubChannels('channels')" id="subChannelsChannelsBtn" data-lang="channels">каналы</button>
+    </div>
+    <div id="subChannelsGlobal" style="margin:8px 0"></div>
+    <div id="subChannelsDM" style="margin:8px 0"></div>
+    <div id="subChannelsChannels" style="margin:8px 0">
+      <h4 data-lang="channelName">название канала</h4>
+      <input id="newChannelName" placeholder="название канала" style="width:70%">
+      <button onclick="createChannel()" data-lang="create">создать</button>
+      <div id="channelList"></div>
     </div>
   </div>
 
@@ -251,6 +280,20 @@ body.dark #filterPanel,body.dark #pollBar,body.dark #gradPostBar,body.dark #grad
       <div id="cloudPassSection"><p data-lang="noCloudPass">облачный пароль не установлен</p><input id="newCloudPass" type="password" placeholder="новый облачный пароль" data-lang-placeholder="newCloudPass"><button onclick="setCloudPass()" data-lang="set">установить</button></div>
       <div id="cloudPassChangeSection" style="display:none"><p data-lang="cloudPassSet">облачный пароль установлен</p><input id="oldCloudPass" type="password" placeholder="текущий облачный пароль" data-lang-placeholder="oldCloudPass"><input id="changeCloudPass" type="password" placeholder="новый облачный пароль" data-lang-placeholder="newCloudPass"><button onclick="changeCloudPass()" data-lang="change">изменить</button></div>
       <div id="cloudMsg" style="color:green;margin-top:5px"></div>
+      <hr>
+      <h3 data-lang="storiesPrivacy">приватность историй</h3>
+      <select id="storiesPrivacySelect" onchange="saveStoriesPrivacy()">
+        <option value="all" data-lang="privacyAll">всем</option>
+        <option value="friends" data-lang="privacyFriends">только друзьям</option>
+        <option value="private" data-lang="privacyPrivate">никому (скрыть)</option>
+      </select>
+      <h3 data-lang="friendsPrivacy">кто может добавлять в друзья</h3>
+      <select id="friendsPrivacySelect" onchange="saveFriendsPrivacy()">
+        <option value="all" data-lang="privacyAll">всем</option>
+        <option value="friends" data-lang="privacyFriends">только друзьям</option>
+        <option value="private" data-lang="privacyPrivate">никому</option>
+      </select>
+      <div id="privacyMsg" style="color:green;margin-top:5px"></div>
     </div>
     <div id="subLanguage" style="display:none">
       <h3 data-lang="language">язык</h3>
@@ -349,8 +392,8 @@ const lang={
     logout:'выход',main:'главная',profile:'профиль',chat:'чат',friends:'друзья',mail:'почта',notif:'уведомления',
     settings:'настройки',search:'поиск',reset:'сброс',send:'отправить',subs:'подписчики',totalLikes:'всего лайков',
     stories:'истории',create:'создать',storyPlace:'текст истории...',storyLimit:'максимум 5 историй, живут 24 часа',storyMade:'история создана',storyMax:'максимум 5 историй',storyNoText:'пустая история',storyEmpty:'историй нет',storyDelete:'удалить',storyBy:'история от',storyExpired:'истекла',viewStories:'посмотреть истории',
-    backToMy:'назад к моему профилю',userPosts:'посты пользователя',rooms:'комнаты',create:'создать',pm:'личные сообщения',
-    back:'назад',sendMsg:'отправить',requests:'заявки',myFriends:'мои друзья',sendReq:'отправить заявку',
+    backToMy:'назад к моему профилю',userStories:'истории',userPosts:'посты пользователя',rooms:'комнаты',create:'создать',pm:'личные сообщения',
+    back:'назад',sendMsg:'отправить',requests:'заявки',myFriends:'мои друзья',sendReq:'отправить заявку',channels:'каналы',globalChats:'глобальные чаты',privateMessages:'личные сообщения',createChannel:'создать канал',channelOwner:'владелец',onlyOwner:'только владелец может публиковать',noChannels:'каналов нет',channelName:'название канала',
     incomingReqs:'входящие заявки',sendMail:'отправить',mailbox:'почтовый ящик',closeMailbox:'закрыть',
     privacy:'конфиденциальность',language:'язык',emailLabel:'почта',changeNick:'сменить ник',
     save:'сохранить',changePass:'сменить пароль',cloudPass:'облачный пароль',noCloudPass:'облачный пароль не установлен',
@@ -364,7 +407,7 @@ const lang={
     msgPlace:'сообщение',friendEmail:'email друга',toEmail:'кому (email)',letter:'письмо',
     newNick:'новый ник',oldPass:'текущий пароль',newPass6:'новый пароль (6+)',
     newCloudPass:'новый облачный пароль',oldCloudPass:'текущий облачный пароль',
-    cloudPassPlace:'облачный пароль',
+    cloudPassPlace:'облачный пароль',storiesPrivacy:'приватность историй',friendsPrivacy:'кто может добавлять в друзья',privacyAll:'всем',privacyFriends:'только друзьям',privacyPrivate:'никому',
     subscribe:'подписаться',unsubscribe:'отписаться',edit:'ред',delete:'удл',cancel:'отмена',
     confirmDelete:'удалить пост?',likedYourPost:' лайкнул твой пост',subscribed:' подписался на вас',
     socnet:'соцсеть',comments:'комментарии',writeComment:'напиши комментарий',noComments:'нет комментариев',
@@ -377,8 +420,8 @@ const lang={
     logout:'Logout',main:'Feed',profile:'Profile',chat:'Chat',friends:'Friends',mail:'Mail',notif:'Notifications',
     settings:'Settings',search:'Search',reset:'Clear',send:'Send',subs:'Subscribers',totalLikes:'Total likes',
     stories:'Stories',create:'Create',storyPlace:'Story text...',storyLimit:'Max 5 stories, live 24 hours',storyMade:'Story created',storyMax:'Max 5 stories',storyNoText:'Empty story',storyEmpty:'No stories',storyDelete:'Delete',storyBy:'Story from',storyExpired:'expired',viewStories:'View stories',
-    backToMy:'Back to my profile',userPosts:"User's posts",rooms:'Rooms',create:'Create',pm:'Private messages',
-    back:'Back',sendMsg:'Send',requests:'Requests',myFriends:'My friends',sendReq:'Send request',
+    backToMy:'Back to my profile',userStories:'Stories',userPosts:"User's posts",rooms:'Rooms',create:'Create',pm:'Private messages',
+    back:'Back',sendMsg:'Send',requests:'Requests',myFriends:'My friends',sendReq:'Send request',channels:'Channels',globalChats:'Global chats',privateMessages:'Private messages',createChannel:'Create channel',channelOwner:'Owner',onlyOwner:'Only owner can post',noChannels:'No channels',channelName:'Channel name',
     incomingReqs:'Incoming requests',sendMail:'Send',mailbox:'Mailbox',closeMailbox:'Close',
     privacy:'Privacy',language:'Language',emailLabel:'Email',changeNick:'Change nickname',
     save:'Save',changePass:'Change password',cloudPass:'Cloud password',noCloudPass:'Cloud password not set',
@@ -392,7 +435,7 @@ const lang={
     msgPlace:'Message',friendEmail:"Friend's email",toEmail:'To (email)',letter:'Message',
     newNick:'New nickname',oldPass:'Current password',newPass6:'New password (6+)',
     newCloudPass:'New cloud password',oldCloudPass:'Current cloud password',
-    cloudPassPlace:'Cloud password',
+    cloudPassPlace:'Cloud password',storiesPrivacy:'Stories privacy',friendsPrivacy:'Who can add you as friend',privacyAll:'Everyone',privacyFriends:'Friends only',privacyPrivate:'Nobody',
     subscribe:'Subscribe',unsubscribe:'Unsubscribe',edit:'Edit',delete:'Delete',cancel:'Cancel',
     confirmDelete:'Delete post?',likedYourPost:' liked your post',subscribed:' subscribed to you',
     socnet:'Social network',comments:'Comments',writeComment:'Write a comment',noComments:'No comments',
@@ -589,6 +632,16 @@ function loadProfileData(){
     document.getElementById('profileSubs').textContent=t('subs')+': '+(u.subscribers?Object.keys(u.subscribers).length:0);
     let tl=0;allP.forEach(p=>{if(p.uid===tu&&p.likes)tl+=Object.keys(p.likes).length});
     document.getElementById('profileTotalLikes').textContent=t('totalLikes')+': '+tl;
+    let st=document.getElementById('profileStoriesList');st.innerHTML='';
+    fetch(DB+'/stories.json').then(r=>r.json()).then(sd=>{
+      let now=Date.now(),arr=[];
+      if(sd)Object.keys(sd).forEach(k=>{let s=sd[k];if(s.uid===tu&&now-(s.time||0)<86400000)arr.push({id:k,...s})});
+      arr.sort((a,b)=>(b.time||0)-(a.time||0));
+      if(!arr.length){st.innerHTML='<div style="color:#999;font-size:12px;padding:4px">нет историй</div>';return}
+      arr.forEach(s=>{
+        st.innerHTML+='<div style="background:#f5f5f5;border:1px solid #ddd;margin:4px 0;padding:8px;border-radius:4px;font-size:14px;white-space:pre-wrap">'+esc(s.text)+'<div style="font-size:11px;color:#888;margin-top:4px">'+new Date(s.time).toLocaleString()+'</div></div>'
+      })
+    }).catch(()=>{st.innerHTML='<div style="color:#999;font-size:12px;padding:4px">нет историй</div>'})
     let sb=document.getElementById('profileSubBtn');
     if(cvu&&cvu!==cu&&cu){sb.style.display='inline';sb.textContent=subs.has(cvu)?t('unsubscribe'):t('subscribe');sb.onclick=()=>toggleSubscribe()}
     else sb.style.display='none';
@@ -690,6 +743,7 @@ function login(){
     }
     if(hashPass(p)!==d.passHash){err(t('error')+': '+t('wrongPass'));return}
     document.getElementById('logId').value='';document.getElementById('logPass').value='';
+    localStorage.setItem('socnet_uid',uid);localStorage.setItem('socnet_pass',p);
     cacheUser(uid,d);
     enterMain(uid,d.nick,d.email)
   }).catch(e=>err(t('error')+': '+e.message))
@@ -1193,6 +1247,8 @@ function changeCloudPass(){let o=document.getElementById('oldCloudPass').value,n
   fetch(DB+'/users/'+cu+'/cloudPass.json').then(r=>r.json()).then(rp=>{if(o!==rp){cloudMsg(t('error'));return}
     return fetch(DB+'/users/'+cu+'/cloudPass.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(n)}).then(()=>{cloudMsg('ok');document.getElementById('oldCloudPass').value='';document.getElementById('changeCloudPass').value='';checkCloudPassStatus(cu)})}).catch(e=>cloudMsg(t('error')+': '+e.message))}
 
+function saveStoriesPrivacy(){if(!cu)return;let v=document.getElementById('storiesPrivacySelect').value;fetch(DB+'/users/'+cu+'/storiesPrivacy.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(v)}).then(()=>document.getElementById('privacyMsg').textContent='ok').catch(()=>document.getElementById('privacyMsg').textContent=t('error'))}
+function saveFriendsPrivacy(){if(!cu)return;let v=document.getElementById('friendsPrivacySelect').value;fetch(DB+'/users/'+cu+'/friendsPrivacy.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(v)}).then(()=>document.getElementById('privacyMsg').textContent='ok').catch(()=>document.getElementById('privacyMsg').textContent=t('error'))}
 function openMailbox(){document.getElementById('mailboxBtn').style.display='none';document.getElementById('inbox').style.display='block';loadInbox();if(mt)clearInterval(mt);mt=setInterval(loadInbox,3000)}
 function hideInbox(){document.getElementById('inbox').style.display='none';document.getElementById('mailboxBtn').style.display='block';clearInterval(mt);mt=null}
 function sendMail(){let t=document.getElementById('mailTo').value.trim(),x=document.getElementById('mailText').value.trim();if(!t||!x){mailErr(t('error'));return}if(!cu){mailErr(t('error'));return}mailErr('');
@@ -1328,6 +1384,6 @@ function cancelSentReq(uid){
     for(let k in rq){if(rq[k].fromUid===cu){fetch(DB+'/users/'+uid+'/friendRequests/'+k+'.json',{method:'DELETE'}).then(()=>searchUsers()).catch(()=>{});return}}
   }).catch(()=>{})
 }
-</script>
+let su=localStorage.getItem('socnet_uid'),sp=localStorage.getItem('socnet_pass');if(su&&sp){document.getElementById('logId').value=su;document.getElementById('logPass').value=sp;login()}</script>
 </body>
 </html>
