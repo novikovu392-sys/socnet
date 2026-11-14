@@ -60,6 +60,7 @@ div[style*="max-width:400px"] { width: 92% !important; max-width: 100% !importan
 <div id="mainScreen" style="display:none">
   <div><span style="font-size:18px;font-weight:bold" data-lang="socnet">соцсеть</span><button onclick="logout()" data-lang="logout">выход</button> <button onclick="toggleTheme()" id="themeBtn"></button></div>
   <div style="margin:12px 0">
+    <button onclick="switchTab('event')" id="tabEventBtn">событие</button>
     <button onclick="switchTab('main')" id="tabMainBtn" data-lang="main">главная</button>
     <button onclick="switchTab('profile')" id="tabProfileBtn" data-lang="profile">профиль</button>
     <button onclick="switchTab('chat')" id="tabChatBtn" data-lang="chat">чат</button>
@@ -69,6 +70,8 @@ div[style*="max-width:400px"] { width: 92% !important; max-width: 100% !importan
     <button onclick="switchTab('stories')" id="tabStoriesBtn" data-lang="stories">истории</button>
     <button onclick="switchTab('channels')" id="tabChannelsBtn" data-lang="channels">каналы</button>
     <button onclick="switchTab('shop')" id="tabShopBtn" data-lang="shop">магазин</button>
+    <button onclick="switchTab('upgrades')" id="tabUpgradesBtn">улучшения</button>
+    <button onclick="switchTab('converter')" id="tabConverterBtn">конвертер NFT</button>
     <button onclick="switchTab('bank')" id="tabBankBtn" data-lang="bank">банк</button>
     <button onclick="switchTab('top')" id="tabTopBtn" data-lang="topRich">топ богачей</button>
     <button onclick="switchTab('settings')" id="tabSettingsBtn" data-lang="settings">настройки</button>
@@ -167,18 +170,22 @@ div[style*="max-width:400px"] { width: 92% !important; max-width: 100% !importan
   </div>
 
   <div id="tabChannels" style="display:none">
-    <div style="margin:8px 0">
-      <button onclick="switchSubChannels('global')" id="subChannelsGlobalBtn" data-lang="globalChats">глобальные чаты</button>
-      <button onclick="switchSubChannels('dm')" id="subChannelsDMBtn" data-lang="privateMessages">личные сообщения</button>
-      <button onclick="switchSubChannels('channels')" id="subChannelsChannelsBtn" data-lang="channels">каналы</button>
-    </div>
-    <div id="subChannelsGlobal" style="margin:8px 0"></div>
-    <div id="subChannelsDM" style="margin:8px 0"></div>
-    <div id="subChannelsChannels" style="margin:8px 0">
-      <h4 data-lang="channelName">название канала</h4>
+    <div id="channelListSection">
+      <h3 data-lang="channels">каналы</h3>
       <input id="newChannelName" placeholder="название канала" style="width:70%">
       <button onclick="createChannel()" data-lang="create">создать</button>
-      <div id="channelList"></div>
+      <div id="channelList" style="margin-top:8px"></div>
+    </div>
+    <div id="channelRoomSection" style="display:none">
+      <h3 id="currentChannelTitle">канал</h3>
+      <div id="channelOwnerLabel" style="font-size:12px;color:#777;margin:4px 0"></div>
+      <button onclick="leaveChannel()" data-lang="back">назад</button>
+      <div id="channelMessages" style="margin:10px 0"></div>
+      <div id="channelComposer" style="display:none;margin-top:8px">
+        <input id="channelInput" placeholder="сообщение" style="width:65%">
+        <button onclick="sendChannelMsg()" data-lang="sendMsg">отправить</button>
+      </div>
+      <div id="channelReadOnlyNote" style="display:none;color:#777;font-size:13px;margin-top:8px">Только владелец канала может публиковать сообщения</div>
     </div>
   </div>
 
@@ -235,6 +242,24 @@ div[style*="max-width:400px"] { width: 92% !important; max-width: 100% !importan
     <div id="shopMsg" style="color:red;margin-top:5px"></div>
   </div>
 
+  <div id="tabUpgrades" style="display:none">
+    <h3>Улучшения</h3>
+    <p>Покупай улучшения за tix. Полученные в батл-пассе улучшения тоже появятся здесь.</p>
+    <div id="upgradeBalance" style="margin:8px 0;font-weight:bold">Баланс: 0 tix</div>
+    <h4>Доступные улучшения</h4><div id="upgradeShop"></div>
+    <div id="upgradeMsg" style="color:#c33;margin:8px 0"></div>
+    <h4>Активированные улучшения</h4><div id="activeUpgrades"></div>
+  </div>
+
+  <div id="tabConverter" style="display:none">
+    <h3>Конвертер NFT</h3>
+    <p>Выбери NFT из своей коллекции и обменяй его на tix. После обмена NFT исчезнет из коллекции. Выплата идёт по полной цене NFT, без учёта скидки при покупке.</p>
+    <div id="converterList"></div>
+    <div id="converterPreview" style="margin:8px 0;color:#666">Выбери NFT для конвертации</div>
+    <button id="convertNftBtn" onclick="convertSelectedNft()" disabled>Конвертировать</button>
+    <div id="converterMsg" style="color:#c33;margin-top:8px"></div>
+  </div>
+
   <div id="tabBank" style="display:none">
     <h3 data-lang="bank">банк tix</h3>
     <p style="font-size:18px"><span data-lang="tixBalance">баланс tix</span>: <span id="tixBalance">0</span></p>
@@ -251,6 +276,15 @@ div[style*="max-width:400px"] { width: 92% !important; max-width: 100% !importan
   <div id="tabTop" style="display:none">
     <h3 data-lang="topRich">топ богачей tix</h3>
     <div id="topList"></div>
+  </div>
+
+  <div id="tabEvent" style="display:none">
+    <h3>Холодный ноябрь</h3>
+    <div id="eventSummary" style="border:1px solid #999;padding:10px;margin:8px 0">Загрузка события...</div>
+    <h4>Задания</h4><div id="eventTasks"></div>
+    <h4>Ежедневные задания</h4><div id="eventDaily"></div>
+    <h4>Награды за BP</h4><div id="eventRewards"></div>
+    <h4>Полученные награды</h4><div id="eventInventory"></div>
   </div>
 
   <div id="tabReports" style="display:none">
@@ -371,7 +405,7 @@ fetch=function(u,o){
 
 let cu=null,cn='',ce='',pu=null,pn='',pe='';
 let pt=null,mt=null,clt=null,cmt=null,dmt=null,nt=null;
-let cci=null,cdi=null,allP=[],sq='',un=0,subs=new Set(),cvu=null,cl='ru';
+let cci=null,cdi=null,activeChannelId=null,activeChannel=null,channelTimer=null,allP=[],sq='',un=0,subs=new Set(),cvu=null,cl='ru';
 const VIP=['umtk1av2o83l87','umtimevvh14x9k'];
 let tix=0;
 let openC=new Set();
@@ -540,20 +574,181 @@ function msgEl(m){
   return b;
 }
 
+
+const CN_TASKS=[
+ ['tix100','Заработать 100 tix',100],['like5','Поставить 5 лайков',20],['sub1','Подписаться на 1 человека',10],
+ ['repost5','Сделать 5 репостов',50],['forward20','Переслать 20 сообщений',100],['friends5','Отправить 5 заявок в друзья',100],
+ ['reply30','Ответить 30 пользователям',100],['comment5','Оставить 5 комментариев',30],['comment20','Оставить 20 комментариев',100],
+ ['gold','Купить золотой куб',80],['repostFriend','Переслать пост друга другу',100],['receiveLetter','Получить письмо',100],
+ ['writeLetter','Написать письмо',30],['post1','Создать пост',10],['channelPost','Написать пост в своём канале',70],
+ ['stories5','Создать 5 историй',100],['pm5','Отправить 5 личных сообщений',100],['messages100','Отправить 100 сообщений где угодно',100],
+ ['like50','Поставить 50 лайков',150],['sub5','Подписаться на 5 человек',70],['post10','Создать 10 постов',120],
+ ['stories20','Создать 20 историй',200],['tix500','Заработать 500 tix',250],['shopBuy','Купить предмет в магазине',50],
+ ['converterUse','Использовать конвертер tix',40],['transferTix','Перевести tix другу',40],['themeSwitch','Сменить тему оформления',20],
+ ['langSwitch','Сменить язык интерфейса',20],['chatCreate','Создать чат',50],['channelCreate','Создать канал',60],
+ ['friendAccept','Принять заявку в друзья',40],['storyView','Просмотреть 10 историй',60],
+ ['comment50','Оставить 50 комментариев',200],['votePoll','Проголосовать в 5 опросах',50],
+ ['mailSend','Отправить 3 письма',50]
+];
+const CN_REWARDS=[
+ [100,'20 tix','tix',20],[200,'30 tix','tix',30],[300,'Алый ромб','nft','n2'],
+ [400,'Улучшение на 5 ч — скидка на NFT 20%','discount',5],[500,'Сапфировая звезда','nft','n4'],
+ [600,'Чёрный бриллиант','nft','n5'],[700,'+50 tix за лайк твоего поста','likebonus',50],
+ [800,'Улучшение на 5 мин — 10 tix за 30 сек','boost',5],[900,'NFT Тыква','nft','pumpkin'],
+ [1000,'Улучшение на 24 ч — +5 историй в день','stories',24],[1100,'Префикс (tikwa)','prefix','tikwa'],
+ [1200,'1000 tix','tix',1000],[1300,'NFT Летучая мышь','nft','bat'],[1400,'+50 tix за лайк твоего поста','likebonus',50],
+ [1500,'Ускорение заработка tix x2 на 1 ч','boostTix',60],[1600,'NFT Золотая монета','nft','goldCoin'],
+[1700,'NFT Красный алмаз','nft','redDiamond'],[1800,'NFT Снежинка','nft','snowflake'],[1900,'1000 tix','tix',1000],
+[2000,'NFT Огненный шар','nft','fireBall'],[2100,'2000 tix','tix',2000],[2200,'Алый ромб','nft','n2'],
+[2300,'NFT Корона','nft','crown'],[2400,'Нояберский лист','prefix','noemberLeaf'],
+[2500,'3000 tix','tix',3000]
+];
+let cnData={bp:0,counts:{},claims:{},daily:{},inventory:{},effects:{}};
+let cnBoostTimer=null;
+function cnToday(){return new Date().toISOString().slice(0,10)}
+function cnPath(p){return DB+'/users/'+cu+'/coldNovember/'+p+'.json'}
+function cnSave(p,v){return fetch(cnPath(p),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(v)})}
+
+const CN_UPGRADES=[
+ {id:'discount',name:'Скидка на NFT 20%',price:2000,duration:5*3600000,desc:'Снижает цены NFT в магазине на 20% на 5 часов.'},
+ {id:'stories',name:'+5 историй в день',price:1500,duration:24*3600000,desc:'Увеличивает лимит историй с 5 до 10 в день на 24 часа.'},
+{id:'boostTix',name:'Ускорение заработка tix x2',price:3000,duration:3600000,desc:'Удваивает заработок tix на 1 час.'},
+ {id:'boost',name:'10 tix каждые 30 секунд',price:1300,duration:5*60000,desc:'Автоматически начисляет 10 tix каждые 30 секунд в течение 5 минут.'}
+];
+let upgradeBuying=false;
+function cnEffectUntil(id){return Number(cnData.effects&&cnData.effects[id+'Until'])||0}
+function renderUpgrades(){
+ let shop=document.getElementById('upgradeShop');if(!shop)return;
+ let bal=document.getElementById('upgradeBalance');if(bal)bal.textContent='Баланс: '+(Number(tix)||0)+' tix';
+ shop.innerHTML=CN_UPGRADES.map(u=>{
+  let active=cnEffectUntil(u.id)>Date.now();
+  return '<div style="border:1px solid #999;padding:10px;margin:7px 0"><b>'+u.name+'</b><div style="font-size:13px;color:#666;margin:4px 0">'+u.desc+'</div><div>'+u.price+' tix</div><button '+(active||upgradeBuying?'disabled':'')+' onclick="buyUpgrade(\''+u.id+'\')">'+(active?'уже активно':'купить за '+u.price+' tix')+'</button></div>';
+ }).join('');
+ let active=document.getElementById('activeUpgrades'),items=[];
+ CN_UPGRADES.forEach(u=>{let until=cnEffectUntil(u.id);if(until>Date.now())items.push('<div style="border:1px solid #999;padding:8px;margin:5px 0"><b>'+u.name+'</b><div style="font-size:13px;color:#666">Активно до: '+new Date(until).toLocaleString()+'</div></div>')});
+ if(cnData.effects&&cnData.effects.prefix)items.push('<div style="border:1px solid #999;padding:8px;margin:5px 0"><b>Префикс: '+esc(cnData.effects.prefix)+'</b><div style="font-size:13px;color:#666">Получен в батл-пассе</div></div>');
+ if(cnData.effects&&cnData.effects.likeBonus)items.push('<div style="border:1px solid #999;padding:8px;margin:5px 0"><b>+50 tix за лайк твоего поста</b><div style="font-size:13px;color:#666">Получено в батл-пассе</div></div>');
+if(cnData.effects&&cnData.effects.boostTixUntil>Date.now())items.push('<div style="border:1px solid #999;padding:8px;margin:5px 0"><b>Ускорение заработка tix x2</b><div style="font-size:13px;color:#666">Активно до: '+new Date(cnData.effects.boostTixUntil).toLocaleString()+'</div></div>');
+ active.innerHTML=items.join('')||'<div style="color:#777">Пока нет активированных улучшений</div>';
+}
+function buyUpgrade(id){
+ if(!cu||upgradeBuying)return;
+ let u=CN_UPGRADES.find(x=>x.id===id);if(!u)return;
+ let now=Date.now(),current=cnEffectUntil(id);if(current>now){renderUpgrades();return}
+ if((Number(tix)||0)<u.price){document.getElementById('upgradeMsg').textContent='Недостаточно tix';return}
+ upgradeBuying=true;document.getElementById('upgradeMsg').textContent='Покупка...';renderUpgrades();
+ addTix(cu,-u.price).then(ok=>{
+  if(!ok)throw new Error('Не удалось списать tix');
+  cnData.effects=cnData.effects||{};cnData.effects[id+'Until']=Math.max(current,Date.now())+u.duration;
+  return cnSave('effects',cnData.effects);
+ }).then(()=>{
+  document.getElementById('upgradeMsg').textContent='Улучшение активировано!';
+  if(id==='boost')cnStartBoostTimer();renderUpgrades();loadShop();
+ }).catch(e=>{document.getElementById('upgradeMsg').textContent='Не удалось купить улучшение: '+e.message;loadTix()}).finally(()=>{upgradeBuying=false;renderUpgrades()});
+}
+const CN_GOALS={tix100:100,like5:5,sub1:1,repost5:5,forward20:20,friends5:5,reply30:30,comment5:5,comment20:20,gold:1,repostFriend:1,receiveLetter:1,writeLetter:1,post1:1,channelPost:1,stories5:5,pm5:5,messages100:100,like50:50,sub5:5,post10:10,stories20:20,tix500:500,shopBuy:1,converterUse:1,transferTix:1,themeSwitch:1,langSwitch:1,chatCreate:1,channelCreate:1,friendAccept:1,storyView:10,comment50:50,votePoll:5,mailSend:3};
+function cnAwardTask(id){
+ if(!cu||!CN_GOALS[id])return;
+ cnData.taskClaims=cnData.taskClaims||{};
+ if(cnData.taskClaims[id]||(cnData.counts[id]||0)<CN_GOALS[id])return;
+ let task=CN_TASKS.find(x=>x[0]===id);if(!task)return;
+ cnData.taskClaims[id]=true;
+ cnSave('taskClaims',cnData.taskClaims);
+ cnAddBP(task[2]);
+}
+function cnProgress(id,n=1){
+ if(!cu||!id||!Number.isFinite(Number(n))||Number(n)<=0)return;
+ cnData.counts=cnData.counts||{};cnData.daily=cnData.daily||{};
+ cnData.counts[id]=(cnData.counts[id]||0)+Number(n);
+ let dailyIds={post1:'dailyPost',like5:'dailyLikes',comment5:'dailyComments',messages100:'dailyMessages'};
+ if(dailyIds[id])cnData.daily[dailyIds[id]]=(cnData.daily[dailyIds[id]]||0)+Number(n);
+ cnSave('counts',cnData.counts);cnSave('daily',cnData.daily);
+ cnAwardTask(id);
+ cnRender();
+}
+function cnReconcileTasks(){
+ (cnData.taskClaims?Object.keys(cnData.taskClaims):[]);
+ CN_TASKS.forEach(x=>cnAwardTask(x[0]));
+}
+function cnStartBoostTimer(){
+ if(!cu||!cnData.effects||cnData.effects.boostUntil<=Date.now()){if(cnBoostTimer){clearInterval(cnBoostTimer);cnBoostTimer=null}return}
+ if(cnBoostTimer)return;
+ cnBoostTimer=setInterval(()=>{
+  if(!cu||!cnData.effects||cnData.effects.boostUntil<=Date.now()){clearInterval(cnBoostTimer);cnBoostTimer=null;renderUpgrades();return}
+  addTix(cu,10);renderUpgrades();
+ },30000);
+}
+function cnAddBP(n){
+ if(!cu||!n)return;cnData.bp=(cnData.bp||0)+n;cnSave('bp',cnData.bp);cnCheckRewards();cnStartBoostTimer();cnRender();
+}
+function cnCheckRewards(){
+ let changed=false;cnData.effects=cnData.effects||{};cnData.claims=cnData.claims||{};cnData.inventory=cnData.inventory||{};
+ CN_REWARDS.forEach(r=>{
+  let threshold=r[0],key=String(threshold);
+  if(cnData.bp>=threshold&&!cnData.claims[key]){
+   cnData.claims[key]=true;cnData.inventory[key]=r[1];changed=true;
+   if(r[2]==='tix')addTix(cu,r[3]);
+   if(r[2]==='likebonus')cnData.effects.likeBonus=true;
+   if(r[2]==='nft')fetch(DB+'/nfts/'+cu+'/'+r[3]+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'});
+   if(r[2]==='discount')cnData.effects.discountUntil=Math.max(Number(cnData.effects.discountUntil)||0,Date.now()+5*3600000);
+   if(r[2]==='boost')cnData.effects.boostUntil=Math.max(Number(cnData.effects.boostUntil)||0,Date.now()+5*60000);
+   if(r[2]==='stories')cnData.effects.storiesUntil=Math.max(Number(cnData.effects.storiesUntil)||0,Date.now()+24*3600000);
+   if(r[2]==='prefix')cnData.effects.prefix=r[3];
+  }
+ });
+ if(changed){cnSave('claims',cnData.claims);cnSave('inventory',cnData.inventory);cnSave('effects',cnData.effects);cnStartBoostTimer()}
+}
+function cnRender(){
+ let total=cnData.bp||0,summary=document.getElementById('eventSummary');
+ if(!summary)return;
+ summary.innerHTML='<b>Твой прогресс: '+total+' BP</b><div style="height:10px;border:1px solid #999;margin:7px 0"><div style="height:100%;background:#777;width:'+Math.min(100,total%1000/10)+'%"></div></div>';
+ let tasks=document.getElementById('eventTasks');tasks.innerHTML='';
+ CN_TASKS.forEach(([id,name,bp])=>{
+  let c=cnData.counts[id]||0,goal=CN_GOALS[id]||0;
+  let done=id==='tix100'?c>=100:c>=goal;
+  tasks.innerHTML+='<div style="border:1px solid #aaa;padding:7px;margin:5px 0"><b>'+name+'</b> — '+bp+' BP <span style="float:right">'+Math.min(c,goal)+'/'+goal+(done?' ✓':'')+'</span></div>';
+ });
+ let daily=[['dailyPost','Создать 1 пост',50,1],['dailyLikes','Поставить 3 лайка',50,3],['dailyComments','Оставить 2 комментария',50,2],['dailyMessages','Отправить 5 сообщений',50,5]];
+ let d=document.getElementById('eventDaily');d.innerHTML='';
+ daily.forEach(([id,name,bp,goal])=>{let c=cnData.daily[id]||0,done=!!(cnData.dailyClaims&&cnData.dailyClaims[id]);d.innerHTML+='<div style="border:1px solid #aaa;padding:7px;margin:5px 0">'+name+' — '+bp+' BP <span style="float:right">'+Math.min(c,goal)+'/'+goal+(done?' ✓':'')+'</span></div>';if(c>=goal&&!done){cnData.dailyClaims=cnData.dailyClaims||{};cnData.dailyClaims[id]=true;cnAddBP(50);cnSave('dailyClaims',cnData.dailyClaims)}});
+ let rw=document.getElementById('eventRewards');rw.innerHTML='';
+ CN_REWARDS.forEach(r=>{rw.innerHTML+='<div style="padding:5px;border-bottom:1px solid #ccc">'+r[0]+' BP — '+r[1]+(cnData.claims[String(r[0])]?' ✓':'')+'</div>'});
+ let inv=document.getElementById('eventInventory');inv.innerHTML=Object.keys(cnData.inventory||{}).map(k=>'<div>'+k+' BP: '+cnData.inventory[k]+'</div>').join('')||'Пока нет полученных наград';
+}
+function loadColdNovember(){
+ if(!cu)return;
+ Promise.all(['bp','counts','claims','daily','dailyClaims','inventory','dailyDate','taskClaims','effects'].map(k=>fetch(cnPath(k)).then(r=>r.json()).catch(()=>null))).then(a=>{
+  cnData={bp:a[0]||0,counts:a[1]||{},claims:a[2]||{},daily:a[3]||{},dailyClaims:a[4]||{},inventory:a[5]||{},dailyDate:a[6]||null,taskClaims:a[7]||{},effects:a[8]||{}};
+  if(cnData.dailyDate!==cnToday()){cnData.daily={};cnData.dailyClaims={};cnData.dailyDate=cnToday();cnSave('daily',{});cnSave('dailyClaims',{});cnSave('dailyDate',cnToday())}
+  cnReconcileTasks();cnCheckRewards();cnStartBoostTimer();cnRender();renderUpgrades()
+ });
+}
+
 function switchTab(name){
   if(name==='profile')showProfile(null);
-  ['main','profile','chat','friends','mail','notif','stories','shop','bank','top','reports','settings'].forEach(n=>document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1)).style.display=n===name?'block':'none');
+  ['main','event','profile','chat','channels','friends','mail','notif','stories','shop','upgrades','converter','bank','top','reports','settings'].forEach(n=>document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1)).style.display=n===name?'block':'none');
   if(name!=='mail'){document.getElementById('inbox').style.display='none';document.getElementById('mailboxBtn').style.display='block';clearInterval(mt);mt=null}
   if(name==='chat'){
     document.getElementById('chatListSection').style.display='block';document.getElementById('chatRoomSection').style.display='none';
     clearInterval(cmt);cmt=null;clearInterval(dmt);dmt=null;cci=null;cdi=null;loadChatList();loadDMList();
     if(clt)clearInterval(clt);clt=setInterval(()=>{loadChatList();loadDMList()},3000)
   }else{clearInterval(clt);clearInterval(cmt);clearInterval(dmt);clt=null;cmt=null;dmt=null}
+  if(name==='channels'){
+    activeChannelId=null;activeChannel=null;
+    document.getElementById('channelListSection').style.display='block';
+    document.getElementById('channelRoomSection').style.display='none';
+    loadChannelList();
+    if(channelTimer)clearInterval(channelTimer);
+    channelTimer=setInterval(()=>{if(!activeChannelId)loadChannelList();else loadChannelMessages()},3000);
+  }else{if(channelTimer)clearInterval(channelTimer);channelTimer=null}
   if(name==='notif'){un=0;document.getElementById('tabNotifBtn').textContent=t('notif');loadNotifs();if(nt)clearInterval(nt);nt=setInterval(loadNotifs,5000)}
   else{clearInterval(nt);nt=null}
   if(name==='stories')loadStories();
+  if(name==='event')loadColdNovember();
   if(name==='bank'){loadTix();loadMyNfts()}
   if(name==='shop')loadShop();
+  if(name==='upgrades'){renderUpgrades();loadTix()}
+  if(name==='converter')loadNftConverter();
   if(name==='top')loadTop();
   if(name==='reports')loadReports();
   if(name==='friends'){loadFriends();loadRequests()}
@@ -678,7 +873,7 @@ function toggleSubscribe(){
   }else{
     fetch(DB+'/users/'+cvu+'/subscribers/'+cu+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'}).catch(()=>{});
     fetch(DB+'/users/'+cu+'/subscriptions/'+cvu+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'}).catch(()=>{});
-    subs.add(cvu);document.getElementById('profileSubBtn').textContent=t('unsubscribe');
+    subs.add(cvu);cnProgress('sub1');document.getElementById('profileSubBtn').textContent=t('unsubscribe');
     fetch(DB+'/users/'+cvu+'/subRewarded/'+cu+'.json').then(r=>r.json()).then(rw=>{
       if(!rw)Promise.all([
         fetch(DB+'/users/'+cvu+'/subRewarded/'+cu+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'}),
@@ -700,7 +895,7 @@ function enterMain(uid,nick,email){
   document.getElementById('showEmail').textContent=email;document.getElementById('showUid').textContent=uid;
   document.getElementById('authScreen').style.display='none';document.getElementById('mainScreen').style.display='block';
   cl=localStorage.getItem('lang')||'ru';document.getElementById('langSelect').value=cl;applyLang();
-  switchTab('main');updateOnline();setInterval(updateOnline,60000);loadPosts();loadNickAnims();checkCloudPassStatus(uid);loadRequests();loadSubscriptions();loadTix();loadShop();loadReports();loadFriendsSet();applyTheme();
+  switchTab('main');loadColdNovember();updateOnline();setInterval(updateOnline,60000);loadPosts();loadNickAnims();checkCloudPassStatus(uid);loadRequests();loadSubscriptions();loadTix();loadShop();loadReports();loadFriendsSet();applyTheme();
   fetch(DB+'/users/'+cu+'/sessionStart.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(Date.now())}).catch(()=>{});
 }
 function updateOnline(){if(!cu)return;fetch(DB+'/users/'+cu+'/lastSeen.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(Date.now())}).catch(()=>{});
@@ -756,13 +951,27 @@ function checkCloudPass(){
   }).catch(()=>{document.getElementById('cloudPassError').textContent=t('error')})
 }
 function logout(){
+  if(channelTimer)clearInterval(channelTimer);channelTimer=null;activeChannelId=null;activeChannel=null;
   cu=null;cn='';ce='';pu=null;
+  if(cnBoostTimer){clearInterval(cnBoostTimer);cnBoostTimer=null}
   clearInterval(pt);clearInterval(mt);clearInterval(clt);clearInterval(cmt);clearInterval(nt);clearInterval(dmt);
   pt=mt=clt=cmt=nt=dmt=null;
   document.getElementById('authScreen').style.display='block';document.getElementById('mainScreen').style.display='none';document.getElementById('cloudPassModal').style.display='none'
 }
 
-function addTix(uid,a){fetch(DB+'/users/'+uid+'/tix.json').then(r=>r.json()).then(cur=>{let nv=(cur||0)+a;fetch(DB+'/users/'+uid+'/tix.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(nv)}).then(()=>{if(uid===cu){tix=nv;if(document.getElementById('tixBalance'))document.getElementById('tixBalance').textContent=nv}}).catch(()=>{})}).catch(()=>{})}
+const tixWriteQueues={};
+function addTix(uid,a){
+ if(!uid||!Number.isFinite(Number(a))||Number(a)===0)return Promise.resolve(false);
+ let amount=Number(a);
+ let run=()=>fetch(DB+'/users/'+uid+'/tix.json').then(r=>{if(!r.ok)throw new Error('Не удалось прочитать баланс tix');return r.json()}).then(cur=>{
+  let nv=(Number(cur)||0)+amount;
+  return fetch(DB+'/users/'+uid+'/tix.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(nv)}).then(r=>{if(!r.ok)throw new Error('Не удалось сохранить баланс tix');if(uid===cu){tix=nv;let el=document.getElementById('tixBalance');if(el)el.textContent=nv;let shop=document.getElementById('shopTix');if(shop)shop.textContent=nv;if(amount>0)cnProgress('tix100',amount)}return true})
+ });
+ let prior=tixWriteQueues[uid]||Promise.resolve();
+ let next=prior.catch(()=>{}).then(run);
+ tixWriteQueues[uid]=next.then(()=>undefined,()=>undefined);
+ return next.catch(e=>{console.error('addTix:',e);return false});
+}
 function loadTix(){if(!cu)return;fetch(DB+'/users/'+cu+'/tix.json').then(r=>r.json()).then(d=>{tix=d||0;document.getElementById('tixBalance').textContent=tix;let se=document.getElementById('shopTix');if(se)se.textContent=tix}).catch(()=>{})}
 const NFTS=[
   {id:'n1',name:'золотой куб',icon:'\u25A0',color:'#f1c40f',price:100},
@@ -771,7 +980,7 @@ const NFTS=[
   {id:'n4',name:'сапфировая звезда',icon:'\u2605',color:'#2980b9',price:250},
   {id:'n5',name:'черный бриллиант',icon:'\u25C6',color:'#111',price:500}
 ];
-function shopPrice(id){let n=NFTS.find(x=>x.id===id);return n?n.price:0}
+function shopPrice(id){let n=NFTS.find(x=>x.id===id);let price=n?n.price:0;return cnData.effects&&cnData.effects.discountUntil>Date.now()?Math.ceil(price*0.8):price}
 function loadShop(){
   if(!cu)return;
   loadTix();
@@ -781,10 +990,10 @@ function loadShop(){
     NFTS.forEach(n=>{
       let owned=pown.includes(n.id);
       let b=document.createElement('div');b.style='border:1px solid #999;margin:6px 0;padding:10px';
-      b.innerHTML='<div style="font-size:26px;color:'+n.color+'">'+n.icon+'</div><b>'+esc(n.name)+'</b> <span style="color:#666">('+n.price+' tix)</span>';
+      let price=shopPrice(n.id);b.innerHTML='<div style="font-size:26px;color:'+n.color+'">'+n.icon+'</div><b>'+esc(n.name)+'</b> <span style="color:#666">('+price+' tix'+(price<n.price?' вместо '+n.price:'')+')</span>';
       let btn=document.createElement('button');
       if(owned){btn.textContent=t('bought');btn.disabled=true}
-      else{btn.textContent=t('buy')+' ('+n.price+')';btn.onclick=()=>buyNft(n.id)}
+      else{btn.textContent=t('buy')+' ('+price+')';btn.onclick=()=>buyNft(n.id)}
       b.appendChild(btn);
       c.appendChild(b)
     })
@@ -800,7 +1009,7 @@ function buyNft(id){
     .then(()=>Promise.all([
       fetch(DB+'/users/'+cu+'/tix.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(tix-p)}),
       fetch(DB+'/nftsReceipts/'+cu+'/'+id+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({bought:Date.now()})})
-    ])).then(()=>{tix-=p;shopMsg(t('nftBought'));loadShop()}).catch(()=>{shopMsg(t('error'))})
+    ])).then(()=>{tix-=p;if(id==='n1')cnProgress('gold');shopMsg(t('nftBought'));loadShop()}).catch(()=>{shopMsg(t('error'))})
   }).catch(()=>{shopMsg(t('error'))})
 }
 function loadMyNfts(){
@@ -819,6 +1028,47 @@ function loadMyNfts(){
     })
   }).catch(()=>{document.getElementById('myNftList').innerHTML=t('error')})
 }
+let converterSelectedNft=null,converterBusy=false;
+function loadNftConverter(){
+ if(!cu)return;
+ converterSelectedNft=null;converterBusy=false;
+ const list=document.getElementById('converterList');
+ const preview=document.getElementById('converterPreview');
+ const btn=document.getElementById('convertNftBtn');
+ const msg=document.getElementById('converterMsg');
+ list.innerHTML='Загрузка коллекции...';preview.textContent='Выбери NFT для конвертации';btn.disabled=true;msg.textContent='';
+ fetch(DB+'/nfts/'+cu+'.json').then(r=>{if(!r.ok)throw new Error('Не удалось загрузить NFT');return r.json()}).then(own=>{
+  list.innerHTML='';
+  const ids=own?Object.keys(own).filter(id=>own[id]===true):[];
+  const available=ids.map(id=>NFTS.find(n=>n.id===id)).filter(Boolean);
+  if(!available.length){list.textContent='У тебя пока нет NFT для конвертации';return}
+  const select=document.createElement('select');select.id='converterNftSelect';select.style='padding:8px;max-width:100%';
+  const first=document.createElement('option');first.value='';first.textContent='Выбери NFT';select.appendChild(first);
+  available.forEach(n=>{const o=document.createElement('option');o.value=n.id;o.textContent=n.name+' — '+n.price+' tix';select.appendChild(o)});
+  select.onchange=()=>{
+   converterSelectedNft=select.value||null;
+   const n=available.find(x=>x.id===converterSelectedNft);
+   preview.textContent=n?('За конвертацию ты получишь '+n.price+' tix. Это полная цена без скидки.'):'Выбери NFT для конвертации';
+   btn.disabled=!n||converterBusy;
+  };
+  list.appendChild(select);
+ }).catch(e=>{list.textContent=e.message||'Ошибка загрузки NFT'});
+}
+function convertSelectedNft(){
+ if(!cu||!converterSelectedNft||converterBusy)return;
+ const n=NFTS.find(x=>x.id===converterSelectedNft);if(!n)return;
+ const uid=cu,id=n.id,btn=document.getElementById('convertNftBtn'),msg=document.getElementById('converterMsg');
+ converterBusy=true;btn.disabled=true;msg.textContent='Конвертация...';
+ fetch(DB+'/nfts/'+uid+'/'+id+'.json').then(r=>{if(!r.ok)throw new Error('Не удалось проверить NFT');return r.json()}).then(owned=>{
+  if(!owned)throw new Error('Этого NFT уже нет в коллекции');
+  return fetch(DB+'/nfts/'+uid+'/'+id+'.json',{method:'DELETE'}).then(r=>{if(!r.ok)throw new Error('Не удалось удалить NFT');return addTix(uid,n.price)}).then(ok=>{
+   if(!ok){return fetch(DB+'/nfts/'+uid+'/'+id+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'}).then(()=>{throw new Error('Не удалось начислить tix. NFT возвращён в коллекцию')})}
+   msg.style.color='green';msg.textContent='Готово! Начислено '+n.price+' tix.';
+   converterSelectedNft=null;loadNftConverter();loadMyNfts();loadTix();
+  });
+ }).catch(e=>{msg.style.color='#c33';msg.textContent=e.message||'Ошибка конвертации'}).finally(()=>{converterBusy=false;btn.disabled=!converterSelectedNft});
+}
+
 function openNftShare(id){
   let n=NFTS.find(x=>x.id===id);if(!n)return;
   let sb=document.createElement('div');
@@ -925,7 +1175,7 @@ function addPost(){
   if(poll)body.poll=poll;
   if(gradPost&&VIP.includes(cu)){body.grad=gradPost;gradPost=null;clearGrad('post')}
   notifyMentions(t);
-  fetch(DB+'/posts.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(()=>{
+  fetch(DB+'/posts.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(()=>{cnProgress('post1');
     document.getElementById('postText').value='';
     document.getElementById('pollQ').value='';
     document.querySelectorAll('.pollOpt').forEach(o=>o.value='');
@@ -1032,12 +1282,15 @@ function toggleLike(id,lk){
   if(lk){fetch(DB+'/posts/'+id+'/likes/'+cu+'.json',{method:'DELETE'}).then(()=>fetchPosts()).catch(()=>{})}
   else{
     fetch(DB+'/posts/'+id+'/likes/'+cu+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'})
-    .then(()=>{fetch(DB+'/posts/'+id+'/uid.json').then(r=>r.json()).then(ou=>{if(ou&&ou!==cu)
+    .then(()=>{cnProgress('like5');fetch(DB+'/posts/'+id+'/uid.json').then(r=>r.json()).then(ou=>{if(ou&&ou!==cu)
       fetch(DB+'/users/'+ou+'/likeRewarded/'+id+'_'+cu+'.json').then(r=>r.json()).then(rw=>{
-        if(!rw)Promise.all([
-          fetch(DB+'/users/'+ou+'/likeRewarded/'+id+'_'+cu+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'}),
-          addTix(ou,LIKE_REWARD)
-        ]).catch(()=>{})
+        if(!rw){
+          Promise.all([
+            fetch(DB+'/users/'+ou+'/likeRewarded/'+id+'_'+cu+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'}),
+            addTix(ou,LIKE_REWARD)
+          ]).catch(()=>{});
+          fetch(DB+'/users/'+ou+'/coldNovember/effects/likeBonus.json').then(r=>r.json()).then(enabled=>{if(enabled)addTix(ou,50)}).catch(()=>{})
+        }
       }).catch(()=>{});
       fetch(DB+'/notifications/'+ou+'.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from:cu,fromNick:cn,type:'like',text:cn+t('likedYourPost'),time:Date.now()})}).catch(()=>{})}).catch(()=>{});fetchPosts()}).catch(()=>{})
   }
@@ -1069,7 +1322,7 @@ function renderComments(id){
   }).catch(()=>{if(openC.has(id))c.innerHTML=cCache[id]||t('error')})
 }
 function addComment(id){let v=document.getElementById('cinput_'+id);if(!v)return;let x=v.value.trim();if(!x||!cu)return;
-  fetch(DB+'/comments/'+id+'.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({uid:cu,nick:cn,text:x,time:Date.now()})}).then(()=>{v.value='';renderComments(id)}).catch(()=>{})
+  fetch(DB+'/comments/'+id+'.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({uid:cu,nick:cn,text:x,time:Date.now()})}).then(()=>{cnProgress('comment5');cnProgress('comment20');v.value='';renderComments(id)}).catch(()=>{})
 }
 function reportPost(p){
   if(!cu||!p)return;
@@ -1174,9 +1427,9 @@ function addStory(){
   if(!cu){sm.textContent=t('error');return}
   fetch(DB+'/stories.json').then(r=>r.json()).then(d=>{
     let my=0;if(d)Object.keys(d).forEach(k=>{if(d[k].uid===cu&&Date.now()-(d[k].time||0)<86400000)my++});
-    if(my>=5){sm.textContent=t('storyMax');return}
+    let extra=cnData.effects&&cnData.effects.storiesUntil>Date.now()?5:0;if(my>=5+extra){sm.textContent=t('storyMax');return}
     fetch(DB+'/stories.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({uid:cu,nick:cn,text:v,time:Date.now()})}).then(()=>{
-      document.getElementById('storyText').value='';sm.textContent=t('storyMade');loadStories()
+      cnProgress('stories5');document.getElementById('storyText').value='';sm.textContent=t('storyMade');loadStories()
     }).catch(e=>{sm.textContent=t('error')+': '+e.message})
   }).catch(()=>{sm.textContent=t('error')})
 }
@@ -1213,17 +1466,17 @@ function doPick(target){
   let key=Date.now()+'_'+Math.random().toString(36).slice(2,7);
   if(pickKind==='repost'&&pendingRepost){
     let m={uid:cu,nick:cn,text:'',time:Date.now(),repFrom:true,repPid:pendingRepost.pid,repNick:pendingRepost.nick,repUid:pendingRepost.uid,repText:pendingRepost.text};
-    writePick(target,key,m);pendingRepost=null
+    writePick(target,key,m,()=>{cnProgress('repost5');if(m.repUid!==cu)cnProgress('repostFriend')});pendingRepost=null
   }
   if(pickKind==='fwd'&&pendingFwd){
     let m={uid:cu,nick:cn,text:pendingFwd.text,time:Date.now(),fwdFrom:pendingFwd.nick};
-    writePick(target,key,m);pendingFwd=null
+    writePick(target,key,m,()=>cnProgress('forward20'));pendingFwd=null
   }
 }
-function writePick(target,key,m){
+function writePick(target,key,m,onSuccess){
   let pr=(target.type==='dm')?fetch(DB+'/'+target.id+'/'+key+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(m)})
     :fetch(DB+'/chatMessages/'+target.id+'/'+key+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(m)});
-  pr.then(()=>{switchTab('chat');if(target.type==='dm')openDM(target.id,target.name);else joinChat(target.id,target.name)}).catch(()=>{})
+  pr.then(r=>{if(!r.ok)throw new Error('Не удалось отправить');if(onSuccess)onSuccess();switchTab('chat');if(target.type==='dm')openDM(target.id,target.name);else joinChat(target.id,target.name)}).catch(e=>console.error('writePick:',e))
 }
 function openRepostLink(pid){
   let p=allP.find(x=>x.id===pid);
@@ -1252,9 +1505,9 @@ function saveFriendsPrivacy(){if(!cu)return;let v=document.getElementById('frien
 function openMailbox(){document.getElementById('mailboxBtn').style.display='none';document.getElementById('inbox').style.display='block';loadInbox();if(mt)clearInterval(mt);mt=setInterval(loadInbox,3000)}
 function hideInbox(){document.getElementById('inbox').style.display='none';document.getElementById('mailboxBtn').style.display='block';clearInterval(mt);mt=null}
 function sendMail(){let t=document.getElementById('mailTo').value.trim(),x=document.getElementById('mailText').value.trim();if(!t||!x){mailErr(t('error'));return}if(!cu){mailErr(t('error'));return}mailErr('');
-  fetch(DB+'/messages.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from:ce,fromNick:cn,to:t,text:x,time:Date.now()})}).then(()=>{document.getElementById('mailTo').value='';document.getElementById('mailText').value='';loadInbox()}).catch(e=>mailErr(t('error')+': '+e.message))}
+  fetch(DB+'/messages.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from:ce,fromNick:cn,to:t,text:x,time:Date.now()})}).then(()=>{cnProgress('writeLetter');document.getElementById('mailTo').value='';document.getElementById('mailText').value='';loadInbox()}).catch(e=>mailErr(t('error')+': '+e.message))}
 function loadInbox(){if(!ce)return;
-  fetch(DB+'/messages.json').then(r=>r.json()).then(d=>{let l=document.getElementById('mailList'),h='';if(d){let a=Object.keys(d).map(k=>({id:k,...d[k]})).filter(m=>m.to===ce).sort((a,b)=>(a.time||0)-(b.time||0));a.forEach(m=>{h+='<div style="border:1px solid #999;margin:4px 0;padding:4px"><b>from:</b> '+(m.fromNick||m.from||'?')+'<br><b>to:</b> '+(m.to||'?')+'<br>'+(m.text||'')+'</div>'})}l.innerHTML=h||t('noMail')}).catch(()=>{})}
+  fetch(DB+'/messages.json').then(r=>r.json()).then(d=>{let l=document.getElementById('mailList'),h='';if(d){let a=Object.keys(d).map(k=>({id:k,...d[k]})).filter(m=>m.to===ce).sort((a,b)=>(a.time||0)-(b.time||0));a.forEach(m=>{fetch(cnPath('receivedLetters/'+m.id)).then(rr=>rr.json()).then(seen=>{if(!seen){fetch(cnPath('receivedLetters/'+m.id),{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'});cnProgress('receiveLetter')}});h+='<div style="border:1px solid #999;margin:4px 0;padding:4px"><b>from:</b> '+(m.fromNick||m.from||'?')+'<br><b>to:</b> '+(m.to||'?')+'<br>'+(m.text||'')+'</div>'})}l.innerHTML=h||t('noMail')}).catch(()=>{})}
 
 function loadChatList(){fetch(DB+'/chatRooms.json').then(r=>r.json()).then(d=>{let c=document.getElementById('chatList');c.innerHTML='';if(!d)return;Object.keys(d).map(k=>({id:k,...d[k]})).forEach(r=>{let b=document.createElement('button');b.type='button';b.style='display:block;width:100%;margin:4px 0;text-align:left';b.innerHTML='<b>'+r.name+'</b> ('+t('from')+' '+r.creatorNick+')';b.onclick=()=>joinChat(r.id,r.name);c.appendChild(b)})}).catch(()=>{})}
 function createChat(){let n=document.getElementById('newChatName').value.trim();if(!n||!cu)return;fetch(DB+'/chatRooms.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,creatorUid:cu,creatorNick:cn,time:Date.now()})}).then(r=>r.json()).then(d=>{document.getElementById('newChatName').value='';loadChatList();joinChat(d.name,n)}).catch(()=>{})}
@@ -1267,15 +1520,74 @@ function sendChatMsg(){let t=document.getElementById('chatInput').value.trim();i
   if(replyCtx){m.replyTo=replyCtx.nick;m.replyToUid=replyCtx.uid||null;replyCtx=null;updateChatInputLabel()}
   if(fwdData){m.fwdFrom=fwdData.nick;m.fwdText=fwdData.text;fwdData=null;updateChatInputLabel()}
   let key='m'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
-  fetch(DB+'/'+p+'/'+key+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(m)}).then(()=>{document.getElementById('chatInput').value='';if(cdi)loadDMMessages();else loadChatMessages()}).catch(()=>{})}
+  fetch(DB+'/'+p+'/'+key+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(m)}).then(()=>{cnProgress('messages100');if(cdi)cnProgress('pm5');if(m.replyTo)cnProgress('reply30');document.getElementById('chatInput').value='';if(cdi)loadDMMessages();else loadChatMessages()}).catch(()=>{})}
 function loadChatMessages(){if(!cci)return;loadPinned();fetch(DB+'/chatMessages/'+cci+'.json').then(r=>r.json()).then(d=>{let c=document.getElementById('chatMessages');c.innerHTML='';if(!d||!Object.keys(d).length){c.innerHTML='<div style="color:#999;padding:8px">'+t('noMessages')+'</div>';return}Object.keys(d).map(k=>({id:k,...d[k]})).sort((a,b)=>(a.time||0)-(b.time||0)).forEach(m=>{c.appendChild(msgEl(m))})}).catch(()=>{})}
 
+
+function loadChannelList(){
+  if(!cu)return;
+  fetch(DB+'/channels.json').then(r=>r.json()).then(data=>{
+    const box=document.getElementById('channelList');if(!box)return;box.innerHTML='';
+    if(!data||!Object.keys(data).length){box.innerHTML='<div style="color:#999">'+t('noChannels')+'</div>';return}
+    Object.keys(data).map(id=>({id,...data[id]})).sort((a,b)=>(b.time||0)-(a.time||0)).forEach(ch=>{
+      const row=document.createElement('div');row.style='border:1px solid #999;padding:8px;margin:5px 0';
+      const b=document.createElement('button');b.type='button';b.style='width:100%;text-align:left';
+      b.innerHTML='<b>'+esc(ch.name||'Канал')+'</b><div style="font-size:12px;color:#777">'+t('channelOwner')+': '+esc(ch.ownerNick||'?')+'</div>';
+      b.onclick=()=>openChannel(ch.id,ch);row.appendChild(b);box.appendChild(row);
+    });
+  }).catch(()=>{const box=document.getElementById('channelList');if(box)box.textContent=t('error')});
+}
+function createChannel(){
+  const input=document.getElementById('newChannelName'),name=input.value.trim();if(!cu||!name)return;
+  fetch(DB+'/channels.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,ownerUid:cu,ownerNick:cn,time:Date.now()})})
+    .then(r=>r.json()).then(d=>{if(!d||!d.name)throw new Error('Не удалось создать канал');input.value='';loadChannelList();openChannel(d.name,{id:d.name,name,ownerUid:cu,ownerNick:cn})})
+    .catch(e=>alert(e.message||t('error')));
+}
+function openChannel(id,channel){
+  activeChannelId=id;activeChannel=channel||{};
+  document.getElementById('channelListSection').style.display='none';document.getElementById('channelRoomSection').style.display='block';
+  document.getElementById('currentChannelTitle').textContent=activeChannel.name||'Канал';
+  document.getElementById('channelOwnerLabel').textContent=t('channelOwner')+': '+(activeChannel.ownerNick||'?');
+  const isOwner=activeChannel.ownerUid===cu;
+  document.getElementById('channelComposer').style.display=isOwner?'block':'none';
+  document.getElementById('channelReadOnlyNote').style.display=isOwner?'none':'block';
+  loadChannelMessages();
+}
+function leaveChannel(){
+  activeChannelId=null;activeChannel=null;
+  document.getElementById('channelListSection').style.display='block';document.getElementById('channelRoomSection').style.display='none';
+  document.getElementById('channelInput').value='';loadChannelList();
+}
+function loadChannelMessages(){
+  if(!activeChannelId)return;const id=activeChannelId;
+  fetch(DB+'/channelMessages/'+id+'.json').then(r=>r.json()).then(data=>{
+    if(id!==activeChannelId)return;const box=document.getElementById('channelMessages');box.innerHTML='';
+    if(!data||!Object.keys(data).length){box.innerHTML='<div style="color:#999;padding:8px">'+t('noMessages')+'</div>';return}
+    Object.keys(data).map(k=>({id:k,...data[k]})).sort((a,b)=>(a.time||0)-(b.time||0)).forEach(m=>{
+      const el=document.createElement('div');el.style='border:1px solid #eee;padding:8px;margin:4px 0';
+      const head=document.createElement('b');head.textContent=m.nick||'?';el.appendChild(head);
+      const body=document.createElement('div');body.textContent=m.text||'';body.style='white-space:pre-wrap';el.appendChild(body);
+      if(m.time){const tm=document.createElement('div');tm.style='font-size:11px;color:#888';tm.textContent=new Date(m.time).toLocaleString();el.appendChild(tm)}
+      box.appendChild(el);
+    });
+  }).catch(()=>{});
+}
+function sendChannelMsg(){
+  const text=document.getElementById('channelInput').value.trim(),id=activeChannelId;if(!id||!text||!cu)return;
+  fetch(DB+'/channels/'+id+'.json').then(r=>r.json()).then(ch=>{
+    if(!ch||ch.ownerUid!==cu){document.getElementById('channelComposer').style.display='none';document.getElementById('channelReadOnlyNote').style.display='block';return}
+    const key='m'+Date.now()+'_'+Math.random().toString(36).slice(2,7),msg={uid:cu,nick:cn,text,time:Date.now()};
+    return fetch(DB+'/channelMessages/'+id+'/'+key+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(msg)}).then(r=>{
+      if(!r.ok)throw new Error('write failed');document.getElementById('channelInput').value='';cnProgress('channelPost');loadChannelMessages();
+    });
+  }).catch(e=>console.error('sendChannelMsg',e));
+}
 
 function sendFriendRequest(){let e=document.getElementById('friendEmail').value.trim();if(!e||!cu){friendMsg(t('error'));return}friendMsg('')
   fetch(DB+'/users.json').then(r=>r.json()).then(us=>{let tu=null;if(us){for(let u in us){if(us[u].email===e){tu=u;break}}}if(!tu){friendMsg(t('error')+': not found');return}if(tu===cu){friendMsg(t('error'));return}
     fetch(DB+'/users/'+cu+'/friends.json').then(r=>r.json()).then(fs=>{if(fs&&fs[tu]){friendMsg(t('error')+': already');return}
       fetch(DB+'/users/'+tu+'/friendRequests.json').then(r=>r.json()).then(rq=>{if(rq){for(let k in rq){if(rq[k].fromUid===cu){friendMsg(t('error')+': sent');return}}}
-        fetch(DB+'/users/'+tu+'/friendRequests.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fromUid:cu,fromNick:cn,fromEmail:ce,time:Date.now()})}).then(()=>{friendMsg('ok');document.getElementById('friendEmail').value='';loadRequests()})
+        fetch(DB+'/users/'+tu+'/friendRequests.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fromUid:cu,fromNick:cn,fromEmail:ce,time:Date.now()})}).then(()=>{cnProgress('friends5');friendMsg('ok');document.getElementById('friendEmail').value='';loadRequests()})
       })
     })
   }).catch(e=>friendMsg(t('error')+': '+e.message))}
