@@ -11,7 +11,7 @@ input,textarea,select,button{font-family:inherit}
 body.dark{--bg:#121212;--fg:#e8e8e8;--soft:#aaa;--brd:#484848;--card:#1e1e1e;--boxbg:#262626;--inp:#181818}
 body.dark #mainScreen,body.dark #authScreen{background:var(--bg);color:var(--fg)}
 body.dark input,body.dark textarea,body.dark select{background:var(--inp);color:var(--fg);border-color:var(--brd)!important}
-body.dark button{background:#2a2a2a;color:var(--fg);border:1px solid #555}
+body.dark button{background:#2a2a2a;color:var(--fg);border:1px solid #555;border-radius:8px}
 body.dark *{border-color:var(--brd)!important}
 body.dark div[style*="background:white"],body.dark div[style*="background:#fff"]{background:#232323!important;color:var(--fg)}
 body.dark div[style*="background:#fafafa"]{background:#262626!important}
@@ -62,6 +62,7 @@ div[style*="max-width:400px"] { width: 92% !important; max-width: 100% !importan
   <div style="margin:12px 0">
     <button onclick="switchTab('event')" id="tabEventBtn">событие</button>
     <button onclick="switchTab('main')" id="tabMainBtn" data-lang="main">главная</button>
+    <button onclick="switchTab('drafts')" id="tabDraftsBtn">черновики</button>
     <button onclick="switchTab('profile')" id="tabProfileBtn" data-lang="profile">профиль</button>
     <button onclick="switchTab('chat')" id="tabChatBtn" data-lang="chat">чат</button>
     <button onclick="switchTab('friends')" id="tabFriendsBtn" data-lang="friends">друзья</button>
@@ -102,6 +103,7 @@ div[style*="max-width:400px"] { width: 92% !important; max-width: 100% !importan
     <div id="postBar" style="margin-bottom:12px">
       <textarea id="postText" placeholder="напиши пост" style="width:100%" data-lang-placeholder="writePost"></textarea>
       <button onclick="addPost()" data-lang="send">отправить</button>
+      <button onclick="savePostDraft()" id="saveDraftBtn">добавить в черновики</button>
       <button onclick="togglePollBar()" id="pollToggleBtn" data-lang="addPoll">+ опрос</button>
       <button onclick="toggleGradBar('post')" id="gradPostBtn" data-lang="gradient" style="display:none">градиент</button>
     </div>
@@ -124,12 +126,22 @@ div[style*="max-width:400px"] { width: 92% !important; max-width: 100% !importan
     <div id="feed"></div>
   </div>
 
+  <div id="tabDrafts" style="display:none">
+    <h3>Черновики</h3>
+    <div style="font-size:13px;color:#888;margin-bottom:10px">Сохранённые записи видны только тебе. Отложенные записи публикуются автоматически, когда приложение открыто и есть связь с базой.</div>
+    <div id="draftList"></div>
+    <hr>
+    <h3>Отложенные публикации</h3>
+    <div id="scheduledList"></div>
+  </div>
+
   <div id="tabProfile" style="display:none">
     <div id="profileContent">
       <p id="profileNickAndBadge"></p>
       <p id="profileOnline" style="font-size:12px;color:#666"></p>
       <p id="profileSubs"><span data-lang="subs">подписчики</span>: 0</p>
       <p id="profileTotalLikes"><span data-lang="totalLikes">всего лайков</span>: 0</p>
+
       <div style="margin:10px 0">
         <button id="profileSubBtn" style="display:none"></button>
         <button id="profileStoriesBtn" style="display:none" onclick="viewUserStories()" data-lang="viewStories"></button>
@@ -443,7 +455,7 @@ let cci=null,cdi=null,activeChannelId=null,activeChannel=null,channelTimer=null,
 const VIP=['umtk1av2o83l87','umtimevvh14x9k'];
 let tix=0;
 let openC=new Set();
-let drafts={};
+let drafts={},editingDraftId=null,draftScheduleTimer=null,scheduledInFlight={};
 let focusedInput=null;
 let cCache={};
 let actMsg=null,pickKind=null,pendingRepost=null,pendingFwd=null;
@@ -787,7 +799,7 @@ function loadColdNovember(){
 
 function switchTab(name){
   if(name==='profile')showProfile(null);
-  ['main','event','profile','chat','channels','communities','friends','mail','notif','stories','shop','upgrades','converter','bank','top','reports','settings'].forEach(n=>document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1)).style.display=n===name?'block':'none');
+  ['main','drafts','event','profile','chat','channels','communities','friends','mail','notif','stories','shop','upgrades','converter','bank','top','reports','settings'].forEach(n=>document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1)).style.display=n===name?'block':'none');
   if(name!=='mail'){document.getElementById('inbox').style.display='none';document.getElementById('mailboxBtn').style.display='block';clearInterval(mt);mt=null}
   if(name==='chat'){
     document.getElementById('chatListSection').style.display='block';document.getElementById('chatRoomSection').style.display='none';
@@ -813,6 +825,7 @@ function switchTab(name){
   }else{if(communityTimer)clearInterval(communityTimer);communityTimer=null}
   if(name==='notif'){un=0;document.getElementById('tabNotifBtn').textContent=t('notif');loadNotifs();if(nt)clearInterval(nt);nt=setInterval(loadNotifs,5000)}
   else{clearInterval(nt);nt=null}
+  if(name==='drafts')loadDrafts();
   if(name==='stories')loadStories();
   if(name==='event')loadColdNovember();
   if(name==='bank'){loadTix();loadMyNfts()}
@@ -965,8 +978,9 @@ function enterMain(uid,nick,email){
   document.getElementById('showEmail').textContent=email;document.getElementById('showUid').textContent=uid;
   document.getElementById('authScreen').style.display='none';document.getElementById('mainScreen').style.display='block';
   cl=localStorage.getItem('lang')||'ru';document.getElementById('langSelect').value=cl;applyLang();
-  switchTab('main');loadColdNovember();updateOnline();setInterval(updateOnline,60000);loadPosts();loadNickAnims();checkCloudPassStatus(uid);loadRequests();loadSubscriptions();loadTix();loadShop();loadReports();loadFriendsSet();applyTheme();
+  switchTab('main');loadColdNovember();updateOnline();setInterval(updateOnline,60000);loadPosts();loadNickAnims();checkCloudPassStatus(uid);loadRequests();loadSubscriptions();loadTix();loadShop();loadReports();loadFriendsSet();applyTheme();processScheduledPosts();if(draftScheduleTimer)clearInterval(draftScheduleTimer);draftScheduleTimer=setInterval(processScheduledPosts,30000);
   fetch(DB+'/users/'+cu+'/sessionStart.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(Date.now())}).catch(()=>{});
+  
 }
 function updateOnline(){if(!cu)return;fetch(DB+'/users/'+cu+'/lastSeen.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(Date.now())}).catch(()=>{});
   fetch(DB+'/users/'+cu+'/onlineMinutes.json').then(r=>r.json()).then(m=>{fetch(DB+'/users/'+cu+'/onlineMinutes.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify((m||0)+1)}).catch(()=>{})}).catch(()=>{})}
@@ -1024,7 +1038,7 @@ function logout(){
   if(channelTimer)clearInterval(channelTimer);channelTimer=null;activeChannelId=null;activeChannel=null;
   cu=null;cn='';ce='';pu=null;
   if(cnBoostTimer){clearInterval(cnBoostTimer);cnBoostTimer=null}
-  clearInterval(pt);clearInterval(mt);clearInterval(clt);clearInterval(cmt);clearInterval(nt);clearInterval(dmt);
+  clearInterval(pt);clearInterval(mt);clearInterval(clt);clearInterval(cmt);clearInterval(nt);clearInterval(dmt);clearInterval(draftScheduleTimer);draftScheduleTimer=null;
   pt=mt=clt=cmt=nt=dmt=null;
   document.getElementById('authScreen').style.display='block';document.getElementById('mainScreen').style.display='none';document.getElementById('cloudPassModal').style.display='none'
 }
@@ -1239,26 +1253,120 @@ function loadTop(){
     })
   }).catch(()=>{document.getElementById('topList').innerHTML=t('error')})
 }
-function addPost(){
-  let t=document.getElementById('postText').value.trim();
-  if(!t||!cu)return;
-  let poll=null;
-  let q=document.getElementById('pollQ').value.trim();
-  if(q){
-    let opts=[].slice.call(document.querySelectorAll('.pollOpt')).map(o=>o.value.trim()).filter(Boolean);
-    if(opts.length>=2)poll={q:q,opts:opts,votes:{}}
-  }
-  let body={uid:cu,nick:cn,text:t,time:Date.now(),likes:{}};
+function captureComposerPost(){
+  let text=document.getElementById('postText').value.trim();
+  let poll=null,q=document.getElementById('pollQ').value.trim();
+  if(q){let opts=[].slice.call(document.querySelectorAll('.pollOpt')).map(o=>o.value.trim()).filter(Boolean);if(opts.length>=2)poll={q:q,opts:opts,votes:{}}}
+  let body={uid:cu,nick:cn,text:text,time:Date.now()};
   if(poll)body.poll=poll;
-  if(gradPost&&VIP.includes(cu)){body.grad=gradPost;gradPost=null;clearGrad('post')}
-  notifyMentions(t);
-  fetch(DB+'/posts.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(()=>{cnProgress('post1');
-    document.getElementById('postText').value='';
-    document.getElementById('pollQ').value='';
-    document.querySelectorAll('.pollOpt').forEach(o=>o.value='');
-    document.getElementById('pollBar').style.display='none'
-  }).catch(()=>{})
+  if(gradPost&&VIP.includes(cu))body.grad=gradPost.slice();
+  return body;
 }
+function resetPostComposer(){
+  document.getElementById('postText').value='';document.getElementById('pollQ').value='';
+  document.querySelectorAll('.pollOpt').forEach(o=>o.value='');
+  document.getElementById('pollBar').style.display='none';
+  document.getElementById('pollToggleBtn').textContent=t('addPoll');
+  clearGrad('post');editingDraftId=null;
+}
+function savePostDraft(){
+  if(!cu)return;
+  let body=captureComposerPost();
+  if(!body.text&&!body.poll){alert('Добавь текст или опрос, чтобы сохранить черновик');return}
+  body.savedAt=Date.now();
+  let path=DB+'/users/'+cu+'/drafts'+(editingDraftId?'/'+editingDraftId:'')+'.json';
+  let method=editingDraftId?'PUT':'POST';
+  fetch(path,{method:method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>{if(!r.ok)throw new Error('Не удалось сохранить черновик');return r.json()}).then(()=>{
+    resetPostComposer();alert('Добавлено в черновики');if(document.getElementById('tabDrafts').style.display==='block')loadDrafts();
+  }).catch(()=>alert('Не удалось сохранить черновик. Проверь подключение.'));
+}
+function addPost(){
+  let body=captureComposerPost();
+  if(!body.text&&!body.poll||!cu)return;
+  body.time=Date.now();body.likes={};
+  notifyMentions(body.text||'');
+  fetch(DB+'/posts.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>{if(!r.ok)throw new Error('publish failed');return r.json()}).then(()=>{
+    cnProgress('post1');
+    if(editingDraftId)fetch(DB+'/users/'+cu+'/drafts/'+editingDraftId+'.json',{method:'DELETE'}).catch(()=>{});
+    resetPostComposer();if(document.getElementById('tabDrafts').style.display==='block')loadDrafts();
+  }).catch(()=>alert('Не удалось опубликовать пост. Черновик сохранён, если ты его ранее сохранял.'));
+}
+function loadDrafts(){
+  if(!cu)return;
+  fetch(DB+'/users/'+cu+'/drafts.json').then(r=>r.json()).then(d=>{
+    let list=document.getElementById('draftList');if(!list)return;
+    if(!d||!Object.keys(d).length){list.innerHTML='<div style="color:#999">Черновиков пока нет</div>';}
+    else list.innerHTML=Object.keys(d).map(id=>{
+      let x=d[id]||{},preview=esc((x.text||'').slice(0,300));
+      let poll=x.poll?'<div style="font-size:12px;color:#777">Опрос: '+esc(x.poll.q||'')+'</div>':'';
+      return '<div style="border:1px solid #999;border-radius:8px;padding:10px;margin:8px 0"><div style="font-size:11px;color:#888">Сохранено: '+(x.savedAt?new Date(x.savedAt).toLocaleString():'—')+'</div><div style="white-space:pre-wrap;margin:6px 0">'+(preview||'<i>Пост без текста</i>')+'</div>'+poll+'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button onclick="publishDraftNow(\''+id+'\')">Опубликовать сейчас</button><button onclick="editDraft(\''+id+'\')">Редактировать</button><button onclick="deleteDraft(\''+id+'\')">Удалить</button></div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><input type="datetime-local" id="schedule_'+id+'"><button onclick="scheduleDraft(\''+id+'\')">Отложить</button></div></div>';
+    }).join('');
+  }).catch(()=>{document.getElementById('draftList').textContent='Не удалось загрузить черновики'});
+  loadScheduledPosts();
+}
+function publishDraftNow(id){
+  if(!cu)return;
+  fetch(DB+'/users/'+cu+'/drafts/'+id+'.json').then(r=>r.json()).then(d=>{
+    if(!d)throw new Error('Черновик не найден');
+    let body={uid:cu,nick:cn,text:d.text||'',time:Date.now(),likes:{}};
+    if(d.poll)body.poll={q:d.poll.q,opts:d.poll.opts||[],votes:{}};
+    if(d.grad)body.grad=d.grad;
+    return fetch(DB+'/posts.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>{if(!r.ok)throw new Error('publish failed');return fetch(DB+'/users/'+cu+'/drafts/'+id+'.json',{method:'DELETE'})});
+  }).then(()=>{cnProgress('post1');loadDrafts();fetchPosts()}).catch(()=>alert('Не удалось опубликовать черновик'));
+}
+function editDraft(id){
+  if(!cu)return;
+  fetch(DB+'/users/'+cu+'/drafts/'+id+'.json').then(r=>r.json()).then(d=>{
+    if(!d)return;
+    document.getElementById('postText').value=d.text||'';
+    document.getElementById('pollQ').value=d.poll?d.poll.q||'':'';
+    let opts=d.poll&&d.poll.opts?d.poll.opts:[];
+    document.getElementById('pollOpts').innerHTML='';
+    (opts.length?opts:['','']).forEach((v,i)=>{let inp=document.createElement('input');inp.className='pollOpt';inp.placeholder='вариант '+(i+1);inp.style='width:60%;margin:2px 0';inp.value=v;document.getElementById('pollOpts').appendChild(inp);if(i<opts.length-1||opts.length===0)document.getElementById('pollOpts').appendChild(document.createElement('br'))});
+    if(d.poll)document.getElementById('pollBar').style.display='block';
+    if(d.grad&&VIP.includes(cu)){gradPost=d.grad;document.getElementById('gradPost1').value=d.grad[0];document.getElementById('gradPost2').value=d.grad[1];document.getElementById('gradPostLabel').textContent=d.grad.join(' -> ')}
+    editingDraftId=id;switchTab('main');document.getElementById('postText').focus();
+  }).catch(()=>alert('Не удалось открыть черновик'));
+}
+function deleteDraft(id){if(!cu||!confirm('Удалить этот черновик?'))return;fetch(DB+'/users/'+cu+'/drafts/'+id+'.json',{method:'DELETE'}).then(()=>loadDrafts()).catch(()=>alert('Не удалось удалить черновик'))}
+function scheduleDraft(id){
+  if(!cu)return;
+  let input=document.getElementById('schedule_'+id),when=input?new Date(input.value).getTime():NaN;
+  if(!Number.isFinite(when)||when<=Date.now()){alert('Выбери дату и время в будущем');return}
+  fetch(DB+'/users/'+cu+'/drafts/'+id+'.json').then(r=>r.json()).then(d=>{
+    if(!d)throw new Error('Черновик не найден');
+    let item={...d,scheduledAt:when,scheduledBy:cu,status:'pending'};
+    return fetch(DB+'/users/'+cu+'/scheduledPosts/'+id+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(item)}).then(r=>{if(!r.ok)throw new Error('schedule failed');return fetch(DB+'/users/'+cu+'/drafts/'+id+'.json',{method:'DELETE'})});
+  }).then(()=>{loadDrafts();processScheduledPosts()}).catch(()=>alert('Не удалось отложить публикацию'));
+}
+function loadScheduledPosts(){
+  if(!cu)return;
+  fetch(DB+'/users/'+cu+'/scheduledPosts.json').then(r=>r.json()).then(d=>{
+    let el=document.getElementById('scheduledList');if(!el)return;
+    if(!d||!Object.keys(d).length){el.innerHTML='<div style="color:#999">Нет отложенных публикаций</div>';return}
+    el.innerHTML=Object.keys(d).map(id=>{let x=d[id]||{};return '<div style="border:1px solid #999;border-radius:8px;padding:8px;margin:6px 0"><b>'+new Date(x.scheduledAt||0).toLocaleString()+'</b><div style="white-space:pre-wrap;margin:5px 0">'+esc((x.text||'').slice(0,220))+'</div><button onclick="cancelScheduledPost(\''+id+'\')">Отменить публикацию</button></div>'}).join('');
+  }).catch(()=>{});
+}
+function cancelScheduledPost(id){if(!cu)return;fetch(DB+'/users/'+cu+'/scheduledPosts/'+id+'.json').then(r=>r.json()).then(d=>{if(!d)return;delete d.scheduledAt;delete d.scheduledBy;delete d.status;d.savedAt=Date.now();return Promise.all([fetch(DB+'/users/'+cu+'/drafts/'+id+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}),fetch(DB+'/users/'+cu+'/scheduledPosts/'+id+'.json',{method:'DELETE'})])}).then(()=>loadDrafts()).catch(()=>alert('Не удалось отменить публикацию'))}
+function processScheduledPosts(){
+  if(!cu)return;
+  let uid=cu;
+  fetch(DB+'/users/'+uid+'/scheduledPosts.json').then(r=>r.json()).then(d=>{
+    if(!d)return;
+    Object.keys(d).forEach(id=>{
+      let x=d[id]||{};if(scheduledInFlight[id]||!x.scheduledAt||x.scheduledAt>Date.now())return;
+      scheduledInFlight[id]=true;
+      let body={uid:uid,nick:x.nick||cn,text:x.text||'',time:Number(x.scheduledAt),likes:{},scheduled:true};
+      if(x.poll)body.poll={q:x.poll.q,opts:x.poll.opts||[],votes:{}};if(x.grad)body.grad=x.grad;
+      fetch(DB+'/posts/scheduled_'+id+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+      .then(r=>{if(!r.ok)throw new Error('scheduled publish failed');return fetch(DB+'/users/'+uid+'/scheduledPosts/'+id+'.json',{method:'DELETE'})})
+      .then(()=>{if(cu===uid){fetchPosts();loadScheduledPosts()}})
+      .catch(()=>{})
+      .finally(()=>{delete scheduledInFlight[id]});
+    });
+  }).catch(()=>{});
+}
+
 function loadPosts(){fetchPosts();if(pt)clearInterval(pt);pt=setInterval(fetchPosts,3000)}
 function fetchPosts(){
   let fEl=document.activeElement;
