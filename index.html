@@ -69,6 +69,7 @@ div[style*="max-width:400px"] { width: 92% !important; max-width: 100% !importan
     <button onclick="switchTab('notif')" id="tabNotifBtn" data-lang="notif">уведомления</button>
     <button onclick="switchTab('stories')" id="tabStoriesBtn" data-lang="stories">истории</button>
     <button onclick="switchTab('channels')" id="tabChannelsBtn" data-lang="channels">каналы</button>
+    <button onclick="switchTab('communities')" id="tabCommunitiesBtn">сообщества</button>
     <button onclick="switchTab('shop')" id="tabShopBtn" data-lang="shop">магазин</button>
     <button onclick="switchTab('upgrades')" id="tabUpgradesBtn">улучшения</button>
     <button onclick="switchTab('converter')" id="tabConverterBtn">конвертер NFT</button>
@@ -186,6 +187,39 @@ div[style*="max-width:400px"] { width: 92% !important; max-width: 100% !importan
         <button onclick="sendChannelMsg()" data-lang="sendMsg">отправить</button>
       </div>
       <div id="channelReadOnlyNote" style="display:none;color:#777;font-size:13px;margin-top:8px">Только владелец канала может публиковать сообщения</div>
+    </div>
+  </div>
+
+  <div id="tabCommunities" style="display:none">
+    <div id="communityListSection">
+      <h3>🌐 Сообщества</h3>
+      <input id="newCommunityName" placeholder="название сообщества" maxlength="48" style="width:68%">
+      <button onclick="createCommunity()">создать сообщество</button>
+      <div id="communityList" style="margin-top:10px"></div>
+    </div>
+    <div id="communityGroupsSection" style="display:none">
+      <button onclick="backToCommunities()">← все сообщества</button>
+      <h3 id="currentCommunityTitle">Сообщество</h3>
+      <div id="communityOwnerLabel" style="font-size:12px;color:#777;margin:4px 0"></div>
+      <div id="communityOwnerTools" style="display:none;border:1px solid #aaa;padding:8px;margin:8px 0">
+        <b>Управление сообществом</b><br>
+        <input id="newCommunityGroupName" placeholder="название группы" maxlength="48" style="width:48%">
+        <select id="newCommunityGroupType"><option value="chat">💬 Чат</option><option value="channel">📢 Канал</option></select>
+        <button onclick="createCommunityGroup()">создать группу</button>
+      </div>
+      <h4>Группы сообщества</h4>
+      <div id="communityGroups"></div>
+    </div>
+    <div id="communityRoomSection" style="display:none">
+      <button onclick="backToCommunityGroups()">← к группам</button>
+      <h3 id="currentCommunityGroupTitle">Группа</h3>
+      <div id="communityGroupInfo" style="font-size:12px;color:#777"></div>
+      <div id="communityGroupMessages" style="margin:10px 0"></div>
+      <div id="communityGroupComposer" style="display:none;margin-top:8px">
+        <input id="communityGroupInput" placeholder="сообщение" maxlength="2000" style="width:68%">
+        <button onclick="sendCommunityGroupMessage()">отправить</button>
+      </div>
+      <div id="communityGroupReadOnly" style="display:none;color:#777;font-size:13px;margin-top:8px">Это канал: публиковать может только владелец сообщества.</div>
     </div>
   </div>
 
@@ -405,7 +439,7 @@ fetch=function(u,o){
 
 let cu=null,cn='',ce='',pu=null,pn='',pe='';
 let pt=null,mt=null,clt=null,cmt=null,dmt=null,nt=null;
-let cci=null,cdi=null,activeChannelId=null,activeChannel=null,channelTimer=null,allP=[],sq='',un=0,subs=new Set(),cvu=null,cl='ru';
+let cci=null,cdi=null,activeChannelId=null,activeChannel=null,channelTimer=null,communityTimer=null,activeCommunityId=null,activeCommunity=null,activeCommunityGroupId=null,activeCommunityGroup=null,allP=[],sq='',un=0,subs=new Set(),cvu=null,cl='ru';
 const VIP=['umtk1av2o83l87','umtimevvh14x9k'];
 let tix=0;
 let openC=new Set();
@@ -492,7 +526,7 @@ function hashPass(p){
   return 'h'+v.toString(36);
 }
 
-function setLang(l){cl=l;localStorage.setItem('lang',l);document.getElementById('langSelect').value=l;applyLang()}
+function setLang(l){if(l!==cl)cnProgress('langSwitch');cl=l;localStorage.setItem('lang',l);document.getElementById('langSelect').value=l;applyLang()}
 function applyLang(){
   document.querySelectorAll('[data-lang]').forEach(el=>el.textContent=t(el.getAttribute('data-lang')));
   document.querySelectorAll('[data-lang-placeholder]').forEach(el=>el.placeholder=t(el.getAttribute('data-lang-placeholder')));
@@ -588,7 +622,20 @@ const CN_TASKS=[
  ['langSwitch','Сменить язык интерфейса',20],['chatCreate','Создать чат',50],['channelCreate','Создать канал',60],
  ['friendAccept','Принять заявку в друзья',40],['storyView','Просмотреть 10 историй',60],
  ['comment50','Оставить 50 комментариев',200],['votePoll','Проголосовать в 5 опросах',50],
- ['mailSend','Отправить 3 письма',50]
+ ['mailSend','Отправить 3 письма',50],
+ ['like100','Поставить 100 лайков',250],['like200','Поставить 200 лайков',350],
+ ['sub10','Подписаться на 10 человек',180],['sub20','Подписаться на 20 человек',300],
+ ['post25','Создать 25 постов',220],['post50','Создать 50 постов',350],
+ ['comment100','Оставить 100 комментариев',250],['comment200','Оставить 200 комментариев',350],
+ ['stories50','Создать 50 историй',250],['stories100','Создать 100 историй',400],
+ ['messages250','Отправить 250 сообщений',220],['messages500','Отправить 500 сообщений',350],
+ ['repost20','Сделать 20 репостов',180],['repost50','Сделать 50 репостов',300],
+ ['forward50','Переслать 50 сообщений',180],['forward100','Переслать 100 сообщений',300],
+ ['friends10','Отправить 10 заявок в друзья',160],['friends20','Отправить 20 заявок в друзья',280],
+ ['mail10','Отправить 10 писем',150],['mail25','Отправить 25 писем',250],
+ ['poll10','Проголосовать в 10 опросах',120],['poll20','Проголосовать в 20 опросах',220],
+ ['tix1000','Заработать 1000 tix',300],['tix2500','Заработать 2500 tix',450],
+ ['tix5000','Заработать 5000 tix',600]
 ];
 const CN_REWARDS=[
  [100,'20 tix','tix',20],[200,'30 tix','tix',30],[300,'Алый ромб','nft','n2'],
@@ -601,9 +648,22 @@ const CN_REWARDS=[
 [1700,'NFT Красный алмаз','nft','redDiamond'],[1800,'NFT Снежинка','nft','snowflake'],[1900,'1000 tix','tix',1000],
 [2000,'NFT Огненный шар','nft','fireBall'],[2100,'2000 tix','tix',2000],[2200,'Алый ромб','nft','n2'],
 [2300,'NFT Корона','nft','crown'],[2400,'Нояберский лист','prefix','noemberLeaf'],
-[2500,'3000 tix','tix',3000]
+[2500,'3000 tix','tix',3000],
+ [2600,'Бонус: 500 tix','tix',500],[2700,'Префикс «Северный ветер»','prefix','Северный ветер'],
+ [2800,'Ускорение заработка tix x2 на 1 ч','boostTix',60],[2900,'NFT Ледяной кристалл','nft','coldCrystal'],
+ [3000,'1000 tix','tix',1000],[3100,'Улучшение: скидка на NFT 20% на 5 ч','discount',5],
+ [3200,'Префикс «Морозный»','prefix','Морозный'],[3300,'NFT Полярная звезда','nft','polarStar'],
+ [3400,'1500 tix','tix',1500],[3500,'+50 tix за лайк твоего поста','likebonus',50],
+ [3600,'Улучшение: +5 историй на 24 ч','stories',24],[3700,'NFT Ледяная корона','nft','iceCrown'],
+ [3800,'2000 tix','tix',2000],[3900,'Ускорение заработка tix x2 на 1 ч','boostTix',60],
+ [4000,'Префикс «Повелитель зимы»','prefix','Повелитель зимы'],[4100,'NFT Снежный талисман','nft','snowTalisman'],
+ [4200,'2500 tix','tix',2500],[4300,'Скидка на NFT 20% на 5 ч','discount',5],
+ [4400,'NFT Ледяной феникс','nft','icePhoenix'],[4500,'3000 tix','tix',3000],
+ [4600,'+50 tix за лайк твоего поста','likebonus',50],[4700,'Префикс «Легенда ноября»','prefix','Легенда ноября'],
+ [4800,'NFT Корона зимы','nft','winterCrown'],[4900,'4000 tix','tix',4000],
+ [5000,'Главная награда: 5000 tix','tix',5000]
 ];
-let cnData={bp:0,counts:{},claims:{},daily:{},inventory:{},effects:{}};
+let cnData={bp:0,counts:{},claims:{},daily:{},dailyClaims:{},taskClaims:{},inventory:{},effects:{}};
 let cnBoostTimer=null;
 function cnToday(){return new Date().toISOString().slice(0,10)}
 function cnPath(p){return DB+'/users/'+cu+'/coldNovember/'+p+'.json'}
@@ -646,7 +706,7 @@ function buyUpgrade(id){
   if(id==='boost')cnStartBoostTimer();renderUpgrades();loadShop();
  }).catch(e=>{document.getElementById('upgradeMsg').textContent='Не удалось купить улучшение: '+e.message;loadTix()}).finally(()=>{upgradeBuying=false;renderUpgrades()});
 }
-const CN_GOALS={tix100:100,like5:5,sub1:1,repost5:5,forward20:20,friends5:5,reply30:30,comment5:5,comment20:20,gold:1,repostFriend:1,receiveLetter:1,writeLetter:1,post1:1,channelPost:1,stories5:5,pm5:5,messages100:100,like50:50,sub5:5,post10:10,stories20:20,tix500:500,shopBuy:1,converterUse:1,transferTix:1,themeSwitch:1,langSwitch:1,chatCreate:1,channelCreate:1,friendAccept:1,storyView:10,comment50:50,votePoll:5,mailSend:3};
+const CN_GOALS={tix100:100,like5:5,sub1:1,repost5:5,forward20:20,friends5:5,reply30:30,comment5:5,comment20:20,gold:1,repostFriend:1,receiveLetter:1,writeLetter:1,post1:1,channelPost:1,stories5:5,pm5:5,messages100:100,like50:50,sub5:5,post10:10,stories20:20,tix500:500,shopBuy:1,converterUse:1,transferTix:1,themeSwitch:1,langSwitch:1,chatCreate:1,channelCreate:1,friendAccept:1,storyView:10,comment50:50,votePoll:5,mailSend:3,like100:100,like200:200,sub10:10,sub20:20,post25:25,post50:50,comment100:100,comment200:200,stories50:50,stories100:100,messages250:250,messages500:500,repost20:20,repost50:50,forward50:50,forward100:100,friends10:10,friends20:20,mail10:10,mail25:25,poll10:10,poll20:20,tix1000:1000,tix2500:2500,tix5000:5000};
 function cnAwardTask(id){
  if(!cu||!CN_GOALS[id])return;
  cnData.taskClaims=cnData.taskClaims||{};
@@ -659,11 +719,12 @@ function cnAwardTask(id){
 function cnProgress(id,n=1){
  if(!cu||!id||!Number.isFinite(Number(n))||Number(n)<=0)return;
  cnData.counts=cnData.counts||{};cnData.daily=cnData.daily||{};
- cnData.counts[id]=(cnData.counts[id]||0)+Number(n);
+ const tiers={tix100:['tix100','tix500','tix1000','tix2500','tix5000'],like5:['like5','like50','like100','like200'],sub1:['sub1','sub5','sub10','sub20'],comment5:['comment5','comment20','comment50','comment100','comment200'],post1:['post1','post10','post25','post50'],stories5:['stories5','stories20','stories50','stories100'],messages100:['messages100','messages250','messages500'],repost5:['repost5','repost20','repost50'],forward20:['forward20','forward50','forward100'],friends5:['friends5','friends10','friends20'],mailSend:['mailSend','mail10','mail25'],votePoll:['votePoll','poll10','poll20']};
+ (tiers[id]||[id]).forEach(k=>{cnData.counts[k]=(cnData.counts[k]||0)+Number(n)});
  let dailyIds={post1:'dailyPost',like5:'dailyLikes',comment5:'dailyComments',messages100:'dailyMessages'};
  if(dailyIds[id])cnData.daily[dailyIds[id]]=(cnData.daily[dailyIds[id]]||0)+Number(n);
  cnSave('counts',cnData.counts);cnSave('daily',cnData.daily);
- cnAwardTask(id);
+ (tiers[id]||[id]).forEach(cnAwardTask);
  cnRender();
 }
 function cnReconcileTasks(){
@@ -701,7 +762,7 @@ function cnCheckRewards(){
 function cnRender(){
  let total=cnData.bp||0,summary=document.getElementById('eventSummary');
  if(!summary)return;
- summary.innerHTML='<b>Твой прогресс: '+total+' BP</b><div style="height:10px;border:1px solid #999;margin:7px 0"><div style="height:100%;background:#777;width:'+Math.min(100,total%1000/10)+'%"></div></div>';
+ summary.innerHTML='<b>Твой прогресс: '+total+' BP</b><div style="height:10px;border:1px solid #999;margin:7px 0"><div style="height:100%;background:#777;width:'+Math.min(100,total/50)+'%"></div></div>';
  let tasks=document.getElementById('eventTasks');tasks.innerHTML='';
  CN_TASKS.forEach(([id,name,bp])=>{
   let c=cnData.counts[id]||0,goal=CN_GOALS[id]||0;
@@ -726,7 +787,7 @@ function loadColdNovember(){
 
 function switchTab(name){
   if(name==='profile')showProfile(null);
-  ['main','event','profile','chat','channels','friends','mail','notif','stories','shop','upgrades','converter','bank','top','reports','settings'].forEach(n=>document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1)).style.display=n===name?'block':'none');
+  ['main','event','profile','chat','channels','communities','friends','mail','notif','stories','shop','upgrades','converter','bank','top','reports','settings'].forEach(n=>document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1)).style.display=n===name?'block':'none');
   if(name!=='mail'){document.getElementById('inbox').style.display='none';document.getElementById('mailboxBtn').style.display='block';clearInterval(mt);mt=null}
   if(name==='chat'){
     document.getElementById('chatListSection').style.display='block';document.getElementById('chatRoomSection').style.display='none';
@@ -741,6 +802,15 @@ function switchTab(name){
     if(channelTimer)clearInterval(channelTimer);
     channelTimer=setInterval(()=>{if(!activeChannelId)loadChannelList();else loadChannelMessages()},3000);
   }else{if(channelTimer)clearInterval(channelTimer);channelTimer=null}
+  if(name==='communities'){
+    activeCommunityId=null;activeCommunity=null;activeCommunityGroupId=null;activeCommunityGroup=null;
+    document.getElementById('communityListSection').style.display='block';
+    document.getElementById('communityGroupsSection').style.display='none';
+    document.getElementById('communityRoomSection').style.display='none';
+    loadCommunityList();
+    if(communityTimer)clearInterval(communityTimer);
+    communityTimer=setInterval(()=>{if(!activeCommunityId)loadCommunityList();else if(activeCommunityGroupId)loadCommunityGroupMessages();else loadCommunityGroups()},3000);
+  }else{if(communityTimer)clearInterval(communityTimer);communityTimer=null}
   if(name==='notif'){un=0;document.getElementById('tabNotifBtn').textContent=t('notif');loadNotifs();if(nt)clearInterval(nt);nt=setInterval(loadNotifs,5000)}
   else{clearInterval(nt);nt=null}
   if(name==='stories')loadStories();
@@ -978,7 +1048,14 @@ const NFTS=[
   {id:'n2',name:'алый ромб',icon:'\u25C6',color:'#e74c3c',price:150},
   {id:'n3',name:'изумрудное кольцо',icon:'\u25CF',color:'#2ecc71',price:200},
   {id:'n4',name:'сапфировая звезда',icon:'\u2605',color:'#2980b9',price:250},
-  {id:'n5',name:'черный бриллиант',icon:'\u25C6',color:'#111',price:500}
+  {id:'n5',name:'черный бриллиант',icon:'\u25C6',color:'#111',price:500},
+  {id:'pumpkin',name:'Тыква',icon:'🎃',color:'#e67e22',price:300},
+  {id:'bat',name:'Летучая мышь',icon:'🦇',color:'#6c3483',price:350},
+  {id:'goldCoin',name:'Золотая монета',icon:'🪙',color:'#d4ac0d',price:400},
+  {id:'redDiamond',name:'Красный алмаз',icon:'💎',color:'#c0392b',price:450},
+  {id:'snowflake',name:'Снежинка',icon:'❄️',color:'#5dade2',price:300},
+  {id:'fireBall',name:'Огненный шар',icon:'🔥',color:'#e74c3c',price:500},
+  {id:'crown',name:'Корона',icon:'👑',color:'#f4d03f',price:600}
 ];
 function shopPrice(id){let n=NFTS.find(x=>x.id===id);let price=n?n.price:0;return cnData.effects&&cnData.effects.discountUntil>Date.now()?Math.ceil(price*0.8):price}
 function loadShop(){
@@ -1009,7 +1086,7 @@ function buyNft(id){
     .then(()=>Promise.all([
       fetch(DB+'/users/'+cu+'/tix.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(tix-p)}),
       fetch(DB+'/nftsReceipts/'+cu+'/'+id+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({bought:Date.now()})})
-    ])).then(()=>{tix-=p;if(id==='n1')cnProgress('gold');shopMsg(t('nftBought'));loadShop()}).catch(()=>{shopMsg(t('error'))})
+    ])).then(()=>{tix-=p;if(id==='n1')cnProgress('gold');cnProgress('shopBuy');shopMsg(t('nftBought'));loadShop()}).catch(()=>{shopMsg(t('error'))})
   }).catch(()=>{shopMsg(t('error'))})
 }
 function loadMyNfts(){
@@ -1020,10 +1097,10 @@ function loadMyNfts(){
     let list=Object.keys(own);
     c.innerHTML='<p style="font-size:14px"><b>'+list.length+'</b></p>';
     list.forEach(id=>{
-      let n=NFTS.find(x=>x.id===id);if(!n)return;
+      let n=NFTS.find(x=>x.id===id);
       let d=document.createElement('div');d.style='border:1px solid #999;margin:6px 0;padding:10px';
-      d.innerHTML='<div style="font-size:26px;color:'+n.color+'">'+n.icon+'</div><b>'+esc(n.name)+'</b>';
-      let sb=document.createElement('button');sb.textContent=t('shareNft');sb.onclick=()=>openNftShare(id);d.appendChild(sb);
+      d.innerHTML='<div style="font-size:26px;color:'+(n?n.color:'#777')+'">'+(n?n.icon:'◇')+'</div><b>'+esc(n?n.name:('NFT '+id))+'</b>';
+      if(n){let sb=document.createElement('button');sb.textContent=t('shareNft');sb.onclick=()=>openNftShare(id);d.appendChild(sb)}
       c.appendChild(d)
     })
   }).catch(()=>{document.getElementById('myNftList').innerHTML=t('error')})
@@ -1063,7 +1140,7 @@ function convertSelectedNft(){
   if(!owned)throw new Error('Этого NFT уже нет в коллекции');
   return fetch(DB+'/nfts/'+uid+'/'+id+'.json',{method:'DELETE'}).then(r=>{if(!r.ok)throw new Error('Не удалось удалить NFT');return addTix(uid,n.price)}).then(ok=>{
    if(!ok){return fetch(DB+'/nfts/'+uid+'/'+id+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'}).then(()=>{throw new Error('Не удалось начислить tix. NFT возвращён в коллекцию')})}
-   msg.style.color='green';msg.textContent='Готово! Начислено '+n.price+' tix.';
+   cnProgress('converterUse');msg.style.color='green';msg.textContent='Готово! Начислено '+n.price+' tix.';
    converterSelectedNft=null;loadNftConverter();loadMyNfts();loadTix();
   });
  }).catch(e=>{msg.style.color='#c33';msg.textContent=e.message||'Ошибка конвертации'}).finally(()=>{converterBusy=false;btn.disabled=!converterSelectedNft});
@@ -1112,7 +1189,7 @@ function transferTix(){
     if(us&&us[u])Promise.all([
       fetch(DB+'/users/'+cu+'/tix.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(tix-a)}),
       addTix(u,a)
-    ]).then(()=>{tix-=a;document.getElementById('tixBalance').textContent=tix;bankMsg(t('transferOk'));document.getElementById('transferUid').value='';document.getElementById('transferAmount').value=''}).catch(()=>{bankMsg(t('error'))})
+    ]).then(()=>{cnProgress('transferTix');tix-=a;document.getElementById('tixBalance').textContent=tix;bankMsg(t('transferOk'));document.getElementById('transferUid').value='';document.getElementById('transferAmount').value=''}).catch(()=>{bankMsg(t('error'))})
     else bankMsg(t('error')+': user not found')
   }).catch(()=>{bankMsg(t('error'))})
 }
@@ -1333,6 +1410,7 @@ function reportPost(p){
 function toggleFilters(){let p=document.getElementById('filterPanel');if(p)p.style.display=p.style.display==='none'?'block':'none'}
 function loadFriendsSet(){if(!cu)return;fetch(DB+'/users/'+cu+'/friends.json').then(r=>r.json()).then(d=>{fset.clear();if(d)Object.keys(d).forEach(u=>fset.add(u))}).catch(()=>{})}
 function toggleTheme(){
+  cnProgress('themeSwitch');
   document.body.classList.toggle('dark');
   localStorage.setItem('dark',document.body.classList.contains('dark')?'1':'0');
   let b=document.getElementById('themeBtn');if(b)b.textContent=document.body.classList.contains('dark')?t('lightTheme'):t('darkTheme')
@@ -1360,7 +1438,7 @@ function votePoll(pid,opt){
     let v=poll.votes||{};
     if(v[cu]!==undefined){fetchPosts();return}
     v[cu]=opt;
-    fetch(DB+'/posts/'+pid+'/poll/votes.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(v)}).then(()=>fetchPosts()).catch(()=>{})
+    fetch(DB+'/posts/'+pid+'/poll/votes.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(v)}).then(()=>{cnProgress('votePoll');fetchPosts()}).catch(()=>{})
   }).catch(()=>{})
 }
 function unvotePoll(pid){
@@ -1405,6 +1483,7 @@ function openStoriesViewer(uid,nick){
     if(d)Object.keys(d).forEach(k=>{let s=d[k];if(s.uid===uid&&now-(s.time||0)<86400000)arr.push({id:k,...s})});
     if(!arr.length)return;
     arr.sort((a,b)=>(b.time||0)-(a.time||0));
+    if(uid!==cu)cnProgress('storyView',arr.length);
     let nickName=nick;
     if(!nickName)nickName=arr[0].nick||'?';
     let sb=document.createElement('div');
@@ -1504,13 +1583,13 @@ function saveStoriesPrivacy(){if(!cu)return;let v=document.getElementById('stori
 function saveFriendsPrivacy(){if(!cu)return;let v=document.getElementById('friendsPrivacySelect').value;fetch(DB+'/users/'+cu+'/friendsPrivacy.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(v)}).then(()=>document.getElementById('privacyMsg').textContent='ok').catch(()=>document.getElementById('privacyMsg').textContent=t('error'))}
 function openMailbox(){document.getElementById('mailboxBtn').style.display='none';document.getElementById('inbox').style.display='block';loadInbox();if(mt)clearInterval(mt);mt=setInterval(loadInbox,3000)}
 function hideInbox(){document.getElementById('inbox').style.display='none';document.getElementById('mailboxBtn').style.display='block';clearInterval(mt);mt=null}
-function sendMail(){let t=document.getElementById('mailTo').value.trim(),x=document.getElementById('mailText').value.trim();if(!t||!x){mailErr(t('error'));return}if(!cu){mailErr(t('error'));return}mailErr('');
-  fetch(DB+'/messages.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from:ce,fromNick:cn,to:t,text:x,time:Date.now()})}).then(()=>{cnProgress('writeLetter');document.getElementById('mailTo').value='';document.getElementById('mailText').value='';loadInbox()}).catch(e=>mailErr(t('error')+': '+e.message))}
+function sendMail(){let recipient=document.getElementById('mailTo').value.trim(),x=document.getElementById('mailText').value.trim();if(!recipient||!x){mailErr(t('error'));return}if(!cu){mailErr(t('error'));return}mailErr('');
+  fetch(DB+'/messages.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from:ce,fromNick:cn,to:recipient,text:x,time:Date.now()})}).then(()=>{cnProgress('writeLetter');cnProgress('mailSend');document.getElementById('mailTo').value='';document.getElementById('mailText').value='';loadInbox()}).catch(e=>mailErr(t('error')+': '+e.message))}
 function loadInbox(){if(!ce)return;
   fetch(DB+'/messages.json').then(r=>r.json()).then(d=>{let l=document.getElementById('mailList'),h='';if(d){let a=Object.keys(d).map(k=>({id:k,...d[k]})).filter(m=>m.to===ce).sort((a,b)=>(a.time||0)-(b.time||0));a.forEach(m=>{fetch(cnPath('receivedLetters/'+m.id)).then(rr=>rr.json()).then(seen=>{if(!seen){fetch(cnPath('receivedLetters/'+m.id),{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'});cnProgress('receiveLetter')}});h+='<div style="border:1px solid #999;margin:4px 0;padding:4px"><b>from:</b> '+(m.fromNick||m.from||'?')+'<br><b>to:</b> '+(m.to||'?')+'<br>'+(m.text||'')+'</div>'})}l.innerHTML=h||t('noMail')}).catch(()=>{})}
 
 function loadChatList(){fetch(DB+'/chatRooms.json').then(r=>r.json()).then(d=>{let c=document.getElementById('chatList');c.innerHTML='';if(!d)return;Object.keys(d).map(k=>({id:k,...d[k]})).forEach(r=>{let b=document.createElement('button');b.type='button';b.style='display:block;width:100%;margin:4px 0;text-align:left';b.innerHTML='<b>'+r.name+'</b> ('+t('from')+' '+r.creatorNick+')';b.onclick=()=>joinChat(r.id,r.name);c.appendChild(b)})}).catch(()=>{})}
-function createChat(){let n=document.getElementById('newChatName').value.trim();if(!n||!cu)return;fetch(DB+'/chatRooms.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,creatorUid:cu,creatorNick:cn,time:Date.now()})}).then(r=>r.json()).then(d=>{document.getElementById('newChatName').value='';loadChatList();joinChat(d.name,n)}).catch(()=>{})}
+function createChat(){let n=document.getElementById('newChatName').value.trim();if(!n||!cu)return;fetch(DB+'/chatRooms.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,creatorUid:cu,creatorNick:cn,time:Date.now()})}).then(r=>r.json()).then(d=>{cnProgress('chatCreate');document.getElementById('newChatName').value='';loadChatList();joinChat(d.name,n)}).catch(()=>{})}
 function joinChat(id,name){cci=id;cdi=null;curRoom={id:id,name:name};document.getElementById('chatListSection').style.display='none';document.getElementById('chatRoomSection').style.display='block';document.getElementById('currentChatTitle').textContent=t('chat')+': '+name;clearInterval(clt);clt=null;clearInterval(dmt);dmt=null;loadChatMessages();if(cmt)clearInterval(cmt);cmt=setInterval(loadChatMessages,3000)}
 function updateChatInputLabel(){let l=document.getElementById('chatCtxLabel');l.style.display=(replyCtx||fwdData)?'block':'none';l.textContent=(replyCtx?t('reply')+': '+replyCtx.nick:'')+(fwdData?t('forwardFrom')+': '+fwdData.nick:'')}
 function leaveChat(){cci=null;cdi=null;replyCtx=null;fwdData=null;updateChatInputLabel();document.getElementById('chatListSection').style.display='block';document.getElementById('chatRoomSection').style.display='none';clearInterval(cmt);cmt=null;clearInterval(dmt);dmt=null;loadChatList();loadDMList();if(clt)clearInterval(clt);clt=setInterval(()=>{loadChatList();loadDMList()},3000)}
@@ -1540,7 +1619,7 @@ function loadChannelList(){
 function createChannel(){
   const input=document.getElementById('newChannelName'),name=input.value.trim();if(!cu||!name)return;
   fetch(DB+'/channels.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,ownerUid:cu,ownerNick:cn,time:Date.now()})})
-    .then(r=>r.json()).then(d=>{if(!d||!d.name)throw new Error('Не удалось создать канал');input.value='';loadChannelList();openChannel(d.name,{id:d.name,name,ownerUid:cu,ownerNick:cn})})
+    .then(r=>r.json()).then(d=>{if(!d||!d.name)throw new Error('Не удалось создать канал');cnProgress('channelCreate');input.value='';loadChannelList();openChannel(d.name,{id:d.name,name,ownerUid:cu,ownerNick:cn})})
     .catch(e=>alert(e.message||t('error')));
 }
 function openChannel(id,channel){
@@ -1583,6 +1662,99 @@ function sendChannelMsg(){
   }).catch(e=>console.error('sendChannelMsg',e));
 }
 
+// Публичные сообщества: владелец создаёт группы, чаты доступны всем для общения,
+// каналы доступны всем для чтения, но писать в них может только владелец.
+function loadCommunityList(){
+  fetch(DB+'/communities.json').then(r=>r.json()).then(data=>{
+    const box=document.getElementById('communityList');if(!box)return;box.innerHTML='';
+    if(!data||!Object.keys(data).length){box.textContent='Пока нет сообществ. Создай первое!';return}
+    Object.keys(data).map(id=>({id,...data[id]})).sort((a,b)=>(b.time||0)-(a.time||0)).forEach(c=>{
+      const row=document.createElement('div');row.style='border:1px solid #999;border-radius:8px;padding:9px;margin:6px 0';
+      const title=document.createElement('b');title.textContent='🌐 '+(c.name||'Сообщество');row.appendChild(title);
+      const owner=document.createElement('div');owner.style='font-size:12px;color:#777;margin:3px 0 7px';owner.textContent='Владелец: '+(c.ownerNick||'?');row.appendChild(owner);
+      const btn=document.createElement('button');btn.textContent='открыть';btn.onclick=()=>openCommunity(c.id,c);row.appendChild(btn);box.appendChild(row);
+    });
+  }).catch(()=>{const b=document.getElementById('communityList');if(b)b.textContent='Не удалось загрузить сообщества'});
+}
+function createCommunity(){
+  const input=document.getElementById('newCommunityName'),name=input.value.trim();if(!cu||!name)return;
+  fetch(DB+'/communities.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,ownerUid:cu,ownerNick:cn,time:Date.now()})})
+    .then(r=>r.json()).then(d=>{if(!d||!d.name)throw new Error('Не удалось создать сообщество');input.value='';openCommunity(d.name,{id:d.name,name,ownerUid:cu,ownerNick:cn,time:Date.now()});loadCommunityList()})
+    .catch(e=>alert(e.message||'Ошибка создания сообщества'));
+}
+function openCommunity(id,community){
+  activeCommunityId=id;activeCommunity=community||{};activeCommunityGroupId=null;activeCommunityGroup=null;
+  document.getElementById('communityListSection').style.display='none';
+  document.getElementById('communityGroupsSection').style.display='block';
+  document.getElementById('communityRoomSection').style.display='none';
+  document.getElementById('currentCommunityTitle').textContent='🌐 '+(activeCommunity.name||'Сообщество');
+  document.getElementById('communityOwnerLabel').textContent='Владелец: '+(activeCommunity.ownerNick||'?');
+  document.getElementById('communityOwnerTools').style.display=activeCommunity.ownerUid===cu?'block':'none';
+  loadCommunityGroups();
+}
+function backToCommunities(){
+  activeCommunityId=null;activeCommunity=null;activeCommunityGroupId=null;activeCommunityGroup=null;
+  document.getElementById('communityListSection').style.display='block';document.getElementById('communityGroupsSection').style.display='none';document.getElementById('communityRoomSection').style.display='none';loadCommunityList();
+}
+function loadCommunityGroups(){
+  if(!activeCommunityId)return;const id=activeCommunityId;
+  fetch(DB+'/communities/'+id+'/groups.json').then(r=>r.json()).then(data=>{
+    if(id!==activeCommunityId)return;const box=document.getElementById('communityGroups');box.innerHTML='';
+    if(!data||!Object.keys(data).length){box.textContent='В этом сообществе пока нет групп';return}
+    Object.keys(data).map(gid=>({id:gid,...data[gid]})).sort((a,b)=>(a.time||0)-(b.time||0)).forEach(g=>{
+      const row=document.createElement('div');row.style='border:1px solid #aaa;border-radius:7px;padding:8px;margin:5px 0';
+      const b=document.createElement('button');b.style='width:100%;text-align:left';b.textContent=(g.type==='channel'?'📢 ':'💬 ')+(g.name||'Группа')+(g.type==='channel'?' · канал':' · чат');b.onclick=()=>openCommunityGroup(g.id,g);row.appendChild(b);box.appendChild(row);
+    });
+  }).catch(()=>{const b=document.getElementById('communityGroups');if(b)b.textContent='Не удалось загрузить группы'});
+}
+function createCommunityGroup(){
+  const name=document.getElementById('newCommunityGroupName').value.trim(),type=document.getElementById('newCommunityGroupType').value,id=activeCommunityId;
+  if(!id||!name||!cu||!activeCommunity||activeCommunity.ownerUid!==cu){alert('Только владелец сообщества может создавать группы');return}
+  const group={name,type,ownerUid:cu,ownerNick:cn,time:Date.now()};
+  fetch(DB+'/communities/'+id+'.json').then(r=>r.json()).then(c=>{
+    if(!c||c.ownerUid!==cu)throw new Error('Нет прав владельца');
+    return fetch(DB+'/communities/'+id+'/groups.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(group)});
+  }).then(r=>r.json()).then(d=>{if(!d||!d.name)throw new Error('Не удалось создать группу');document.getElementById('newCommunityGroupName').value='';loadCommunityGroups();openCommunityGroup(d.name,{id:d.name,...group})})
+    .catch(e=>alert(e.message||'Ошибка создания группы'));
+}
+function openCommunityGroup(id,group){
+  activeCommunityGroupId=id;activeCommunityGroup=group||{};
+  document.getElementById('communityGroupsSection').style.display='none';document.getElementById('communityRoomSection').style.display='block';
+  const isChannel=activeCommunityGroup.type==='channel',isOwner=activeCommunity&&activeCommunity.ownerUid===cu;
+  document.getElementById('currentCommunityGroupTitle').textContent=(isChannel?'📢 ':'💬 ')+(activeCommunityGroup.name||'Группа');
+  document.getElementById('communityGroupInfo').textContent=isChannel?'Канал · публикует владелец сообщества':'Общий чат · писать могут все';
+  document.getElementById('communityGroupComposer').style.display=(!isChannel||isOwner)?'block':'none';
+  document.getElementById('communityGroupReadOnly').style.display=(isChannel&&!isOwner)?'block':'none';
+  loadCommunityGroupMessages();
+}
+function backToCommunityGroups(){
+  activeCommunityGroupId=null;activeCommunityGroup=null;document.getElementById('communityRoomSection').style.display='none';document.getElementById('communityGroupsSection').style.display='block';document.getElementById('communityGroupInput').value='';loadCommunityGroups();
+}
+function loadCommunityGroupMessages(){
+  if(!activeCommunityId||!activeCommunityGroupId)return;const cid=activeCommunityId,gid=activeCommunityGroupId;
+  fetch(DB+'/communities/'+cid+'/groupMessages/'+gid+'.json').then(r=>r.json()).then(data=>{
+    if(cid!==activeCommunityId||gid!==activeCommunityGroupId)return;const box=document.getElementById('communityGroupMessages');box.innerHTML='';
+    if(!data||!Object.keys(data).length){box.textContent='Сообщений пока нет';return}
+    Object.keys(data).map(k=>({id:k,...data[k]})).sort((a,b)=>(a.time||0)-(b.time||0)).forEach(m=>{
+      const el=document.createElement('div');el.style='border:1px solid #eee;border-radius:7px;padding:8px;margin:4px 0';
+      const head=document.createElement('b');head.textContent=m.nick||'?';el.appendChild(head);
+      const body=document.createElement('div');body.textContent=m.text||'';body.style='white-space:pre-wrap;overflow-wrap:anywhere';el.appendChild(body);
+      const tm=document.createElement('div');tm.style='font-size:11px;color:#888';tm.textContent=m.time?new Date(m.time).toLocaleString():'';el.appendChild(tm);box.appendChild(el);
+    });
+  }).catch(()=>{});
+}
+function sendCommunityGroupMessage(){
+  const input=document.getElementById('communityGroupInput'),text=input.value.trim(),cid=activeCommunityId,gid=activeCommunityGroupId;
+  if(!cu||!text||!cid||!gid)return;
+  Promise.all([fetch(DB+'/communities/'+cid+'.json').then(r=>r.json()),fetch(DB+'/communities/'+cid+'/groups/'+gid+'.json').then(r=>r.json())]).then(([community,group])=>{
+    if(!community||!group)throw new Error('Группа не найдена');
+    if(group.type==='channel'&&community.ownerUid!==cu)throw new Error('В канал может писать только владелец сообщества');
+    const msg={uid:cu,nick:cn,text,time:Date.now()};
+    return fetch(DB+'/communities/'+cid+'/groupMessages/'+gid+'.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(msg)});
+  }).then(r=>{if(!r.ok)throw new Error('Не удалось отправить сообщение');input.value='';loadCommunityGroupMessages()})
+    .catch(e=>alert(e.message||'Ошибка отправки'));
+}
+
 function sendFriendRequest(){let e=document.getElementById('friendEmail').value.trim();if(!e||!cu){friendMsg(t('error'));return}friendMsg('')
   fetch(DB+'/users.json').then(r=>r.json()).then(us=>{let tu=null;if(us){for(let u in us){if(us[u].email===e){tu=u;break}}}if(!tu){friendMsg(t('error')+': not found');return}if(tu===cu){friendMsg(t('error'));return}
     fetch(DB+'/users/'+cu+'/friends.json').then(r=>r.json()).then(fs=>{if(fs&&fs[tu]){friendMsg(t('error')+': already');return}
@@ -1592,7 +1764,7 @@ function sendFriendRequest(){let e=document.getElementById('friendEmail').value.
     })
   }).catch(e=>friendMsg(t('error')+': '+e.message))}
 function loadRequests(){if(!cu)return;fetch(DB+'/users/'+cu+'/friendRequests.json').then(r=>r.json()).then(d=>{let c=document.getElementById('incomingRequests'),cnt=0,h='';if(d){Object.keys(d).forEach(k=>{cnt++;let r=d[k];h+='<div style="border:1px solid #999;margin:4px 0;padding:4px"><b>'+r.fromNick+'</b> ('+r.fromEmail+') <button onclick="acceptRequest(\''+k+'\',\''+r.fromUid+'\')">'+t('confirm')+'</button> <button onclick="declineRequest(\''+k+'\')">'+t('cancel')+'</button></div>'})}c.innerHTML=h||t('noIncomingReqs');document.getElementById('tabFriendsBtn').textContent=cnt?t('friends')+' +'+cnt:t('friends')}).catch(()=>{})}
-function acceptRequest(k,fu){if(!cu)return;friendMsg('');Promise.all([fetch(DB+'/users/'+cu+'/friends/'+fu+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'}),fetch(DB+'/users/'+fu+'/friends/'+cu+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'}),fetch(DB+'/users/'+cu+'/friendRequests/'+k+'.json',{method:'DELETE'})]).then(()=>{loadRequests();loadFriends()}).catch(e=>friendMsg(t('error')+': '+e.message))}
+function acceptRequest(k,fu){if(!cu)return;friendMsg('');Promise.all([fetch(DB+'/users/'+cu+'/friends/'+fu+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'}),fetch(DB+'/users/'+fu+'/friends/'+cu+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'}),fetch(DB+'/users/'+cu+'/friendRequests/'+k+'.json',{method:'DELETE'})]).then(()=>{cnProgress('friendAccept');loadRequests();loadFriends()}).catch(e=>friendMsg(t('error')+': '+e.message))}
 function declineRequest(k){if(!cu)return;fetch(DB+'/users/'+cu+'/friendRequests/'+k+'.json',{method:'DELETE'}).then(()=>loadRequests()).catch(e=>friendMsg(t('error')+': '+e.message))}
 
 
