@@ -24,6 +24,11 @@ body.dark span[style*="color:#07c"]{color:#6ab!important}
 body.dark button[style*="background:#fff"]{background:#2a2a2a!important;color:var(--fg)}
 body.dark button[style*="background:#333"]{background:#3a3a3a!important}
 body.dark #filterPanel,body.dark #pollBar,body.dark #gradPostBar,body.dark #gradChatBar{background:var(--boxbg)}
+/* тёмные пузыри сообщений в личных и общих чатах */
+body.dark #chatMessages > div > button{background:#292929!important;color:#e8e8e8!important;border-color:#484848!important}
+body.dark #chatMessages > div > button div{color:#e8e8e8!important}
+body.dark #chatMessages > div > button span{color:inherit}
+body.dark #chatMessages > div > button [style*="background:#f8f8f8"],body.dark #chatMessages > div > button [style*="background:#f0f0f0"]{background:#353535!important;color:#ddd!important}
 </style>
 
 <style>
@@ -59,28 +64,50 @@ div[style*="max-width:400px"] { width: 92% !important; max-width: 100% !importan
 
 <div id="mainScreen" style="display:none">
   <div><span style="font-size:18px;font-weight:bold" data-lang="socnet">соцсеть</span><button onclick="logout()" data-lang="logout">выход</button> <button onclick="toggleTheme()" id="themeBtn"></button></div>
-  <div style="margin:12px 0">
-    <button onclick="switchTab('event')" id="tabEventBtn">событие</button>
-    <button onclick="switchTab('main')" id="tabMainBtn" data-lang="main">главная</button>
-    <button onclick="switchTab('drafts')" id="tabDraftsBtn">черновики</button>
-    <button onclick="switchTab('profile')" id="tabProfileBtn" data-lang="profile">профиль</button>
-    <button onclick="switchTab('chat')" id="tabChatBtn" data-lang="chat">чат</button>
-    <button onclick="switchTab('friends')" id="tabFriendsBtn" data-lang="friends">друзья</button>
-    <button onclick="switchTab('mail')" id="tabMailBtn" data-lang="mail">почта</button>
+  <nav id="primaryNav" style="margin:12px 0;display:flex;flex-wrap:wrap;gap:4px">
+    <button onclick="switchTab('main')">главная</button>
+    <button id="tabChatBtn" onclick="switchTab('chat')" data-lang="chat">чат</button>
+    <button id="tabFriendsBtn" onclick="switchTab('friends')" data-lang="friends">друзья</button>
+    <button id="tabMailBtn" onclick="switchTab('mail')" data-lang="mail">почта</button>
+    <button onclick="switchTab('settings')" data-lang="settings">настройки</button>
+  </nav>
+  <nav id="mainSubNav" class="subnav" style="margin:8px 0;display:flex;flex-wrap:wrap;gap:4px">
+    <button onclick="switchTab('main')" data-lang="main">главная</button>
+    <button onclick="switchTab('event')">событие</button>
+    <button onclick="switchTab('drafts')">черновики</button>
+    <button onclick="switchTab('favorites')">избранное <span id="favoritesCount" style="font-size:11px;color:#777"></span></button>
+    <button onclick="switchTab('profile')" data-lang="profile">профиль</button>
     <button onclick="switchTab('notif')" id="tabNotifBtn" data-lang="notif">уведомления</button>
-    <button onclick="switchTab('stories')" id="tabStoriesBtn" data-lang="stories">истории</button>
-    <button onclick="switchTab('channels')" id="tabChannelsBtn" data-lang="channels">каналы</button>
-    <button onclick="switchTab('communities')" id="tabCommunitiesBtn">сообщества</button>
-    <button onclick="switchTab('shop')" id="tabShopBtn" data-lang="shop">магазин</button>
-    <button onclick="switchTab('upgrades')" id="tabUpgradesBtn">улучшения</button>
-    <button onclick="switchTab('converter')" id="tabConverterBtn">конвертер NFT</button>
-    <button onclick="switchTab('bank')" id="tabBankBtn" data-lang="bank">банк</button>
-    <button onclick="switchTab('top')" id="tabTopBtn" data-lang="topRich">топ богачей</button>
-    <button onclick="switchTab('settings')" id="tabSettingsBtn" data-lang="settings">настройки</button>
-    <button onclick="switchTab('reports')" id="tabReportsBtn" data-lang="reports" style="display:none">жалобы</button>
-  </div>
+    <button onclick="switchTab('stories')" data-lang="stories">истории</button>
+    <button onclick="switchTab('bank')" data-lang="bank">банк</button>
+  </nav>
+  <nav id="bankSubNav" class="subnav" style="margin:8px 0;display:none;flex-wrap:wrap;gap:4px">
+    <button onclick="switchTab('bank')" data-lang="bank">банк</button>
+    <button onclick="switchTab('shop')" data-lang="shop">магазин</button>
+    <button onclick="switchTab('upgrades')">улучшения</button>
+    <button onclick="switchTab('converter')">конвертер NFT</button>
+  </nav>
+  <nav id="chatSubNav" class="subnav" style="margin:8px 0;display:none;flex-wrap:wrap;gap:4px">
+    <button id="subChatBtn" onclick="switchTab('chat')" data-lang="chat">чат</button>
+    <button id="subChannelsBtn" onclick="switchTab('channels')" data-lang="channels">каналы</button>
+    <button onclick="switchTab('communities')">сообщества</button>
+  </nav>
 
   <div id="tabMain">
+    <div style="border:1px solid #ccc;border-radius:8px;padding:10px;margin:8px 0 12px">
+      <h3 style="margin:0 0 8px">поиск</h3>
+      <select id="globalSearchType" style="max-width:100%;margin-right:4px">
+        <option value="friends">друзья</option>
+        <option value="messages">сообщения</option>
+        <option value="channels">каналы</option>
+        <option value="mail">письма</option>
+        <option value="communities">сообщества</option>
+      </select>
+      <input id="globalSearchInput" placeholder="что ищем?" style="width:55%;max-width:100%">
+      <button onclick="runGlobalSearch()">найти</button>
+      <button onclick="resetGlobalSearch()" data-lang="reset">сброс</button>
+      <div id="globalSearchResults" style="margin-top:8px"></div>
+    </div>
     <div style="margin-bottom:12px">
       <input id="searchInput" placeholder="поиск по постам..." style="width:70%" data-lang-placeholder="searchPlace">
       <button onclick="searchPosts()" data-lang="search">поиск</button>
@@ -124,6 +151,11 @@ div[style*="max-width:400px"] { width: 92% !important; max-width: 100% !importan
       <button onclick="togglePollBar()" data-lang="cancel">отмена</button>
     </div>
     <div id="feed"></div>
+  </div>
+
+  <div id="tabFavorites" style="display:none">
+    <h3>избранное</h3>
+    <div id="favoritesList"></div>
   </div>
 
   <div id="tabDrafts" style="display:none">
@@ -170,6 +202,7 @@ div[style*="max-width:400px"] { width: 92% !important; max-width: 100% !importan
       <button onclick="leaveChat()" data-lang="back">назад</button>
       <div id="chatCtxLabel" style="display:none;font-size:12px;color:#555;margin:4px 0"></div>
       <div id="pinnedBar" style="display:none;margin:6px 0"></div>
+      <div style="margin:6px 0"><input id="roomSearchInput" placeholder="поиск в чате..." style="width:65%"><button onclick="searchCurrentRoom()">найти</button><button onclick="clearRoomSearch()">сброс</button><div id="roomSearchResults" style="margin-top:6px"></div></div>
       <div id="chatMessages" style="margin:10px 0"></div>
       <div id="gradChatBar" style="display:none;border:1px solid #ccc;padding:8px;margin-bottom:6px">
         <span data-lang="grad1">цвет 1</span> <input type="color" id="gradChat1" value="#ff0040">
@@ -178,7 +211,8 @@ div[style*="max-width:400px"] { width: 92% !important; max-width: 100% !importan
         <button onclick="clearGrad('chat')" data-lang="cancel">отмена</button>
         <span id="gradChatLabel" style="font-size:12px;color:#666"></span>
       </div>
-      <div><input id="chatInput" placeholder="сообщение" style="width:60%" data-lang-placeholder="msgPlace"><button onclick="sendChatMsg()" data-lang="sendMsg">отправить</button> <button onclick="toggleGradBar('chat')" id="gradChatBtn" data-lang="gradient" style="display:none">градиент</button></div>
+      <div id="typingIndicator" style="display:none;font-size:12px;color:#888;margin:2px 0 6px"></div>
+      <div><input id="chatInput" placeholder="сообщение" style="width:60%" data-lang-placeholder="msgPlace" oninput="onChatTyping()" onblur="setMyTyping(false)"><button onclick="sendChatMsg()" data-lang="sendMsg">отправить</button> <button onclick="toggleGradBar('chat')" id="gradChatBtn" data-lang="gradient" style="display:none">градиент</button></div>
     </div>
   </div>
 
@@ -193,6 +227,7 @@ div[style*="max-width:400px"] { width: 92% !important; max-width: 100% !importan
       <h3 id="currentChannelTitle">канал</h3>
       <div id="channelOwnerLabel" style="font-size:12px;color:#777;margin:4px 0"></div>
       <button onclick="leaveChannel()" data-lang="back">назад</button>
+      <div style="margin:6px 0"><input id="channelSearchInput" placeholder="поиск в канале..." style="width:65%"><button onclick="searchCurrentChannel()">найти</button><button onclick="clearChannelSearch()">сброс</button><div id="channelSearchResults" style="margin-top:6px"></div></div>
       <div id="channelMessages" style="margin:10px 0"></div>
       <div id="channelComposer" style="display:none;margin-top:8px">
         <input id="channelInput" placeholder="сообщение" style="width:65%">
@@ -243,7 +278,7 @@ div[style*="max-width:400px"] { width: 92% !important; max-width: 100% !importan
       <button onclick="searchUsers()" data-lang="search">поиск</button>
       <div id="userSearchResults" style="margin-top:6px"></div>
     </div>
-    <div><button onclick="switchSubFriends('list')" data-lang="myFriends">мои друзья</button><button onclick="switchSubFriends('requests')" data-lang="requests">заявки</button></div>
+    <div><button id="friendsListTab" onclick="switchSubFriends('list')">друзья</button><button id="friendsRequestsTab" onclick="switchSubFriends('requests')">друзья</button></div>
     <div id="subFriendsList"><div id="friendsList"></div></div>
     <div id="subFriendsRequests" style="display:none">
       <h4 data-lang="sendReq">отправить заявку</h4>
@@ -400,8 +435,20 @@ div[style*="max-width:400px"] { width: 92% !important; max-width: 100% !importan
     <p><b id="actFrom"></b></p>
     <button onclick="replyToMsg()" data-lang="reply">ответить</button>
     <button onclick="fwdMsg()" data-lang="forward">переслать</button>
+    <button id="favoriteMsgBtn" onclick="favoriteCurrentMessage()">☆ добавить в избранное</button>
+    <button id="reactMsgBtn" onclick="openReactionPicker()">☺ поставить реакцию</button>
+    <button id="editMsgBtn" onclick="editCurrentMessage()" style="display:none">✎ редактировать</button>
+    <button id="deleteMsgBtn" onclick="deleteCurrentMessage()" style="display:none">⌫ удалить</button>
     <button id="pinBtn" onclick="pinMsg()" data-lang="pin" style="display:none">закрепить</button>
     <button onclick="closeActionModal()" data-lang="close">закрыть</button>
+  </div>
+</div>
+
+<div id="reactionModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);padding:40px;z-index:1000">
+  <div style="background:white;padding:16px;max-width:340px;margin:40px auto;border-radius:10px">
+    <h3 style="margin-top:0">Выбери реакцию</h3>
+    <div id="reactionChoices" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+    <button onclick="closeReactionPicker()" style="margin-top:12px">закрыть</button>
   </div>
 </div>
 
@@ -450,7 +497,8 @@ fetch=function(u,o){
 }
 
 let cu=null,cn='',ce='',pu=null,pn='',pe='';
-let pt=null,mt=null,clt=null,cmt=null,dmt=null,nt=null;
+let pt=null,mt=null,clt=null,cmt=null,dmt=null,nt=null,unreadTimer=null;
+let actFavoriteContext=null;
 let cci=null,cdi=null,activeChannelId=null,activeChannel=null,channelTimer=null,communityTimer=null,activeCommunityId=null,activeCommunity=null,activeCommunityGroupId=null,activeCommunityGroup=null,allP=[],sq='',un=0,subs=new Set(),cvu=null,cl='ru';
 const VIP=['umtk1av2o83l87','umtimevvh14x9k'];
 let tix=0;
@@ -459,6 +507,8 @@ let drafts={},editingDraftId=null,draftScheduleTimer=null,scheduledInFlight={};
 let focusedInput=null;
 let cCache={};
 let actMsg=null,pickKind=null,pendingRepost=null,pendingFwd=null;
+let reactionTarget=null;
+let typingTimer=null,lastTypingWrite=0;
 let replyCtx=null,fwdData=null,pendingScroll=null;
 let hiddenPosts=new Set();
 let filters={friends:false,mine:false,poll:false,grad:false,sort:'new'};
@@ -579,6 +629,31 @@ function loadNotifs(){
   }).catch(()=>{})
 }
 
+function readStatePath(key){return 'users/'+cu+'/readState/'+key+'.json'}
+function markRoomRead(key){if(!cu||!key)return;fetch(DB+'/'+readStatePath(key),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(Date.now())}).catch(()=>{});}
+function refreshUnreadBadges(){
+ if(!cu)return;
+ const set=(id,label,n)=>{const e=document.getElementById(id);if(e)e.textContent=n?label+' +'+n:label};
+ Promise.all([
+  fetch(DB+'/users/'+cu+'/friendRequests.json').then(r=>r.json()).catch(()=>null),
+  fetch(DB+'/messages.json').then(r=>r.json()).catch(()=>null),
+  fetch(DB+'/notifications/'+cu+'.json').then(r=>r.json()).catch(()=>null),
+  fetch(DB+'/users/'+cu+'/friends.json').then(r=>r.json()).catch(()=>null),
+  fetch(DB+'/chatRooms.json').then(r=>r.json()).catch(()=>null),
+  fetch(DB+'/channels.json').then(r=>r.json()).catch(()=>null)
+ ]).then(async ([req,mail,notifs,friends,rooms,channels])=>{
+  const reqN=req?Object.keys(req).length:0;set('tabFriendsBtn',t('friends'),reqN);set('friendsRequestsTab','друзья',reqN);
+  let mailN=0;if(mail){const a=Object.keys(mail).filter(k=>mail[k]&&mail[k].to===ce);const flags=await Promise.all(a.map(k=>fetch(DB+'/users/'+cu+'/receivedLetters/'+k+'.json').then(r=>r.json()).catch(()=>false)));mailN=flags.filter(x=>!x).length}set('tabMailBtn',t('mail'),mailN);
+  const notifN=notifs?Object.values(notifs).filter(n=>!n||!n.seen).length:0;set('tabNotifBtn',t('notif'),notifN);
+  let chatN=0,channelN=0;const checks=[];
+  if(friends)Object.keys(friends).forEach(uid=>{const id='dm_'+[cu,uid].sort().join('_');checks.push((async()=>{const [msgs,stamp]=await Promise.all([fetch(DB+'/'+id+'.json').then(r=>r.json()).catch(()=>null),fetch(DB+'/'+readStatePath('dm_'+id)).then(r=>r.json()).catch(()=>0)]);if(msgs)chatN+=Object.values(msgs).filter(m=>m&&m.uid!==cu&&(m.time||0)>(stamp||0)).length})())});
+  if(rooms)Object.keys(rooms).forEach(id=>checks.push((async()=>{const [msgs,stamp]=await Promise.all([fetch(DB+'/chatMessages/'+id+'.json').then(r=>r.json()).catch(()=>null),fetch(DB+'/'+readStatePath('chat_'+id)).then(r=>r.json()).catch(()=>0)]);if(msgs)chatN+=Object.values(msgs).filter(m=>m&&m.uid!==cu&&(m.time||0)>(stamp||0)).length})()));
+  if(channels)Object.keys(channels).forEach(id=>checks.push((async()=>{const [msgs,stamp]=await Promise.all([fetch(DB+'/channelMessages/'+id+'.json').then(r=>r.json()).catch(()=>null),fetch(DB+'/'+readStatePath('channel_'+id)).then(r=>r.json()).catch(()=>0)]);if(msgs)channelN+=Object.values(msgs).filter(m=>m&&(m.time||0)>(stamp||0)).length})()));
+  await Promise.all(checks);set('tabChatBtn',t('chat'),chatN+channelN);set('subChatBtn',t('chat'),chatN);set('subChannelsBtn',t('channels'),channelN);
+ }).catch(()=>{});
+}
+function startUnreadWatch(){refreshUnreadBadges();if(unreadTimer)clearInterval(unreadTimer);unreadTimer=setInterval(refreshUnreadBadges,8000)}
+
 function loadDMList(){
   if(!cu)return;
   fetch(DB+'/users/'+cu+'/friends.json').then(r=>r.json()).then(fs=>{
@@ -592,13 +667,58 @@ function loadDMList(){
     }))
   }).catch(()=>{})
 }
-function openDM(id,nk){cdi=id;cci=null;curRoom=null;
+function openDM(id,nk){cdi=id;cci=null;curRoom=null;markRoomRead('dm_'+id);
   document.getElementById('chatListSection').style.display='none';document.getElementById('chatRoomSection').style.display='block';
   document.getElementById('currentChatTitle').textContent=t('pm')+': '+nk;
-  clearInterval(clt);clt=null;clearInterval(cmt);cmt=null;loadDMMessages();loadPinned();if(dmt)clearInterval(dmt);dmt=setInterval(()=>{loadDMMessages();loadPinned()},3000)
+  clearInterval(clt);clt=null;clearInterval(cmt);cmt=null;loadDMMessages();loadPinned();startTypingWatch();if(dmt)clearInterval(dmt);dmt=setInterval(()=>{loadDMMessages();loadPinned()},3000)
 }
+const REACTION_SET=['👍','❤️','😂','🔥','😮','😢','👏','🎉'];
+function reactionKey(emoji){return 'r'+Array.from(emoji).map(c=>c.codePointAt(0).toString(16)).join('_')}
+function reactionPath(ctx){
+  if(!ctx)return '';
+  if(ctx.type==='post')return 'posts/'+ctx.sourceId;
+  if(ctx.type==='channelMessage')return 'channelMessages/'+ctx.roomId+'/'+ctx.sourceId;
+  if(ctx.type==='communityMessage')return 'communities/'+ctx.roomId+'/groupMessages/'+ctx.groupId+'/'+ctx.sourceId;
+  if(ctx.type==='dm')return ctx.roomId+'/'+ctx.sourceId;
+  if(ctx.type==='chat')return 'chatMessages/'+ctx.roomId+'/'+ctx.sourceId;
+  return '';
+}
+function renderReactions(data,ctx){
+  const box=document.createElement('div');box.style='display:flex;flex-wrap:wrap;gap:4px;margin:4px 0';
+  Object.keys(data||{}).forEach(k=>{const users=data[k]||{},count=Object.keys(users).length;if(!count)return;const emoji=REACTION_SET.find(e=>reactionKey(e)===k);if(!emoji)return;const btn=document.createElement('button');btn.type='button';btn.textContent=emoji+' '+count;btn.style='font-size:12px;padding:2px 7px';if(cu&&users[cu])btn.style.border='1px solid #3985d6';btn.onclick=()=>toggleReaction(ctx,emoji);box.appendChild(btn)});
+  return box;
+}
+function openReactionPicker(ctx){
+  if(ctx)reactionTarget=ctx;
+  if(!reactionTarget&&actFavoriteContext)reactionTarget=actFavoriteContext;
+  if(!reactionTarget)return;
+  const box=document.getElementById('reactionChoices');box.innerHTML='';
+  REACTION_SET.forEach(emoji=>{const b=document.createElement('button');b.type='button';b.textContent=emoji;b.style='font-size:24px;padding:8px';b.onclick=()=>{toggleReaction(reactionTarget,emoji);closeReactionPicker();if(document.getElementById('actionModal').style.display==='block')closeActionModal()};box.appendChild(b)});
+  document.getElementById('reactionModal').style.display='block';
+}
+function closeReactionPicker(){document.getElementById('reactionModal').style.display='none';reactionTarget=null}
+function toggleReaction(ctx,emoji){
+  if(!cu){alert('Сначала войди в аккаунт');return}
+  const base=reactionPath(ctx);if(!base)return;const key=reactionKey(emoji),url=DB+'/'+base+'/reactions/'+key+'/'+cu+'.json';
+  fetch(url).then(r=>r.json()).then(existing=>fetch(url,{method:existing?'DELETE':'PUT',headers:{'Content-Type':'application/json'},body:'true'})).then(()=>refreshReactionTarget(ctx)).catch(()=>alert('Не удалось поставить реакцию'));
+}
+function refreshReactionTarget(ctx){
+  const reload={post:fetchPosts,chat:loadChatMessages,dm:loadDMMessages,channelMessage:loadChannelMessages,communityMessage:loadCommunityGroupMessages};
+  if(reload[ctx.type])reload[ctx.type]();
+}
+function editCurrentMessage(){
+  const m=actMsg,ctx=actFavoriteContext;if(!m||m.uid!==cu||!ctx)return;
+  const next=prompt('Изменить сообщение:',m.text||'');if(next===null)return;const value=next.trim();if(!value){alert('Сообщение не может быть пустым');return}
+  const path=reactionPath(ctx);fetch(DB+'/'+path+'/text.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(value)}).then(r=>{if(!r.ok)throw new Error();closeActionModal();refreshReactionTarget(ctx)}).catch(()=>alert('Не удалось изменить сообщение'));
+}
+function deleteCurrentMessage(){
+  const m=actMsg,ctx=actFavoriteContext;if(!m||m.uid!==cu||!ctx)return;
+  if(!confirm('Удалить своё сообщение?'))return;const path=reactionPath(ctx);
+  fetch(DB+'/'+path+'.json',{method:'DELETE'}).then(r=>{if(!r.ok)throw new Error();closeActionModal();refreshReactionTarget(ctx)}).catch(()=>alert('Не удалось удалить сообщение'));
+}
+
 function loadDMMessages(){
-  if(!cdi)return;
+  if(!cdi)return;markRoomRead('dm_'+cdi);
   loadPinned();
   fetch(DB+'/'+cdi+'.json').then(r=>r.json()).then(d=>{
     let c=document.getElementById('chatMessages');c.innerHTML='';
@@ -609,15 +729,17 @@ function loadDMMessages(){
   }).catch(()=>{})
 }
 function msgEl(m){
-  let b=document.createElement('button');b.type='button';b.style='display:block;width:100%;margin:4px 0;text-align:left;border:1px solid #eee;background:#fff';
+  let wrap=document.createElement('div');wrap.style='margin:4px 0';
+  let b=document.createElement('button');b.type='button';b.style='display:block;width:100%;text-align:left;border:1px solid #eee;background:#fff;padding:8px';
   let fwd='',rp='',fh='';
   if(m.fwdFrom)fwd='<div style="background:#f8f8f8;border:1px solid #ddd;padding:2px 6px;font-size:12px">'+t('forwardFrom')+' <b>'+showNickFor(m.uid,m.fwdFrom)+'</b></div>';
   if(m.replyTo)rp='<div style="background:#f8f8f8;border:1px solid #ddd;padding:2px 6px;font-size:12px">'+t('reply')+': <b>'+showNickFor(m.replyToUid,m.replyTo)+'</b></div>';
   if(m.repFrom)fh='<div style="background:#f0f0f0;padding:2px 4px;font-size:12px">'+t('repostFrom')+' <b>'+showNickFor(m.repUid,m.repNick||'?')+'</b><br>'+esc(String(m.repText||'').slice(0,200))+' <span style="color:blue;cursor:pointer" onclick="event.stopPropagation();openRepostLink(\''+esc(m.repPid||'')+'\')">'+t('openPost')+'</span></div>';
   b.innerHTML=fwd+rp+fh+'<b>'+showNickFor(m.uid,m.nick)+'</b>: '+(gradCss(m.grad)?'<span style="'+gradCss(m.grad)+'">'+mentionHtml(m.text)+'</span>':mentionHtml(m.text));
   if(m.time){let tv=document.createElement('div');tv.style.fontSize='12px';tv.textContent=new Date(m.time).toLocaleString();b.appendChild(tv)}
-  b.onclick=()=>openActionModal(m);
-  return b;
+  b.onclick=()=>openActionModal(m,{type:cdi?'dm':'chat',sourceId:m.id,roomId:cdi||cci});wrap.appendChild(b);
+  wrap.appendChild(renderReactions(m.reactions||{}, {type:cdi?'dm':'chat',sourceId:m.id,roomId:cdi||cci}));
+  return wrap;
 }
 
 
@@ -798,8 +920,16 @@ function loadColdNovember(){
 }
 
 function switchTab(name){
+  if(cu)startUnreadWatch();
+  const bankTabs=['bank','shop','upgrades','converter'];
+  const chatTabs=['chat','channels','communities'];
+  const mainTabs=['main','event','drafts','favorites','profile','notif','stories','bank','shop','upgrades','converter','top','reports'];
+  const root=bankTabs.includes(name)?'main':(chatTabs.includes(name)?'chat':(mainTabs.includes(name)?'main':name));
+  document.getElementById('mainSubNav').style.display=root==='main'?'flex':'none';
+  document.getElementById('bankSubNav').style.display=bankTabs.includes(name)?'flex':'none';
+  document.getElementById('chatSubNav').style.display=root==='chat'?'flex':'none';
   if(name==='profile')showProfile(null);
-  ['main','drafts','event','profile','chat','channels','communities','friends','mail','notif','stories','shop','upgrades','converter','bank','top','reports','settings'].forEach(n=>document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1)).style.display=n===name?'block':'none');
+  ['main','drafts','favorites','event','profile','chat','channels','communities','friends','mail','notif','stories','shop','upgrades','converter','bank','top','reports','settings'].forEach(n=>document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1)).style.display=n===name?'block':'none');
   if(name!=='mail'){document.getElementById('inbox').style.display='none';document.getElementById('mailboxBtn').style.display='block';clearInterval(mt);mt=null}
   if(name==='chat'){
     document.getElementById('chatListSection').style.display='block';document.getElementById('chatRoomSection').style.display='none';
@@ -807,7 +937,7 @@ function switchTab(name){
     if(clt)clearInterval(clt);clt=setInterval(()=>{loadChatList();loadDMList()},3000)
   }else{clearInterval(clt);clearInterval(cmt);clearInterval(dmt);clt=null;cmt=null;dmt=null}
   if(name==='channels'){
-    activeChannelId=null;activeChannel=null;
+    activeChannelId=null;activeChannel=null;clearChannelSearch();
     document.getElementById('channelListSection').style.display='block';
     document.getElementById('channelRoomSection').style.display='none';
     loadChannelList();
@@ -823,9 +953,10 @@ function switchTab(name){
     if(communityTimer)clearInterval(communityTimer);
     communityTimer=setInterval(()=>{if(!activeCommunityId)loadCommunityList();else if(activeCommunityGroupId)loadCommunityGroupMessages();else loadCommunityGroups()},3000);
   }else{if(communityTimer)clearInterval(communityTimer);communityTimer=null}
-  if(name==='notif'){un=0;document.getElementById('tabNotifBtn').textContent=t('notif');loadNotifs();if(nt)clearInterval(nt);nt=setInterval(loadNotifs,5000)}
+  if(name==='notif'){un=0;document.getElementById('tabNotifBtn').textContent=t('notif');fetch(DB+'/notifications/'+cu+'.json').then(r=>r.json()).then(d=>{if(d)Object.keys(d).forEach(k=>{if(d[k]&&!d[k].seen)fetch(DB+'/notifications/'+cu+'/'+k+'/seen.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'})})});loadNotifs();if(nt)clearInterval(nt);nt=setInterval(loadNotifs,5000)}
   else{clearInterval(nt);nt=null}
   if(name==='drafts')loadDrafts();
+  if(name==='favorites')loadFavorites();
   if(name==='stories')loadStories();
   if(name==='event')loadColdNovember();
   if(name==='bank'){loadTix();loadMyNfts()}
@@ -978,7 +1109,7 @@ function enterMain(uid,nick,email){
   document.getElementById('showEmail').textContent=email;document.getElementById('showUid').textContent=uid;
   document.getElementById('authScreen').style.display='none';document.getElementById('mainScreen').style.display='block';
   cl=localStorage.getItem('lang')||'ru';document.getElementById('langSelect').value=cl;applyLang();
-  switchTab('main');loadColdNovember();updateOnline();setInterval(updateOnline,60000);loadPosts();loadNickAnims();checkCloudPassStatus(uid);loadRequests();loadSubscriptions();loadTix();loadShop();loadReports();loadFriendsSet();applyTheme();processScheduledPosts();if(draftScheduleTimer)clearInterval(draftScheduleTimer);draftScheduleTimer=setInterval(processScheduledPosts,30000);
+  switchTab('main');loadColdNovember();updateOnline();setInterval(updateOnline,60000);loadPosts();loadNickAnims();checkCloudPassStatus(uid);loadRequests();loadSubscriptions();loadTix();loadShop();loadReports();loadFriendsSet();updateFavoriteCount();applyTheme();processScheduledPosts();if(draftScheduleTimer)clearInterval(draftScheduleTimer);draftScheduleTimer=setInterval(processScheduledPosts,30000);
   fetch(DB+'/users/'+cu+'/sessionStart.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(Date.now())}).catch(()=>{});
   
 }
@@ -1035,7 +1166,7 @@ function checkCloudPass(){
   }).catch(()=>{document.getElementById('cloudPassError').textContent=t('error')})
 }
 function logout(){
-  if(channelTimer)clearInterval(channelTimer);channelTimer=null;activeChannelId=null;activeChannel=null;
+  if(channelTimer)clearInterval(channelTimer);channelTimer=null;activeChannelId=null;activeChannel=null;clearChannelSearch();
   cu=null;cn='';ce='';pu=null;
   if(cnBoostTimer){clearInterval(cnBoostTimer);cnBoostTimer=null}
   clearInterval(pt);clearInterval(mt);clearInterval(clt);clearInterval(cmt);clearInterval(nt);clearInterval(dmt);clearInterval(draftScheduleTimer);draftScheduleTimer=null;
@@ -1407,6 +1538,9 @@ function renderPosts(){
     }
     let l=p.likes||{},lc=Object.keys(l).length,lk=l[cu]?true:false;
     let lb=document.createElement('button');lb.textContent=(lk?'♥ ':'♡ ')+lc;lb.style='margin-right:6px';lb.onclick=()=>toggleLike(p.id,lk);d.appendChild(lb);
+    let favBtn=document.createElement('button');favBtn.textContent='☆ избранное';favBtn.style='margin-right:6px';favBtn.onclick=()=>saveFavorite({type:'post',sourceId:p.id,text:p.text||'',author:p.nick||'',time:p.time||Date.now(),title:'Пост'});d.appendChild(favBtn);
+    let reactPostBtn=document.createElement('button');reactPostBtn.textContent='☺ реакция';reactPostBtn.onclick=()=>openReactionPicker({type:'post',sourceId:p.id});d.appendChild(reactPostBtn);
+    d.appendChild(renderReactions(p.reactions||{}, {type:'post',sourceId:p.id}));
     let pb=document.createElement('button');pb.textContent=t('profile');pb.style='margin-right:6px';pb.onclick=()=>{switchTab('profile');showProfile(p.uid)};d.appendChild(pb);
     if(p.uid!==cu&&cu){
       let sb=document.createElement('button');
@@ -1515,6 +1649,71 @@ function reportPost(p){
   if(!reason||!reason.trim())return;
   fetch(DB+'/reports.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pid:p.id,from:cu,fromNick:cn,reason:reason.trim(),pText:p.text,time:Date.now()})}).then(()=>{alert(t('reportDone'))}).catch(()=>{})
 }
+function favoriteCurrentMessage(){
+  if(!actMsg)return;
+  const c=actFavoriteContext||{type:cdi?'dm':'chat',sourceId:actMsg.id,roomId:cdi||cci};
+  saveFavorite({type:c.type,sourceId:actMsg.id,roomId:c.roomId,text:actMsg.text||'',author:actMsg.nick||'',time:actMsg.time||Date.now(),title:'Сообщение'});
+  closeActionModal();
+}
+function updateFavoriteCount(){
+  if(!cu)return;fetch(DB+'/users/'+cu+'/favorites.json').then(r=>r.json()).then(data=>{const n=data?Object.keys(data).length:0;const el=document.getElementById('favoritesCount');if(el)el.textContent=n?'('+n+')':''}).catch(()=>{});
+}
+function saveFavorite(item){
+  if(!cu){alert('Сначала войди в аккаунт');return}
+  const key='fav_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+  fetch(DB+'/users/'+cu+'/favorites/'+key+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...item,savedAt:Date.now()})})
+    .then(r=>{if(!r.ok)throw new Error('save failed');alert('Добавлено в избранное');updateFavoriteCount();if(document.getElementById('tabFavorites').style.display==='block')loadFavorites()})
+    .catch(()=>alert('Не удалось добавить в избранное'));
+}
+function loadFavorites(){
+  if(!cu)return;
+  fetch(DB+'/users/'+cu+'/favorites.json').then(r=>r.json()).then(data=>{
+    const box=document.getElementById('favoritesList');if(!box)return;box.innerHTML='';
+    const arr=data?Object.keys(data).map(id=>({id,...data[id]})).sort((a,b)=>(b.savedAt||0)-(a.savedAt||0)):[];
+    const count=document.getElementById('favoritesCount');if(count)count.textContent=arr.length?'('+arr.length+')':'';
+    if(!arr.length){box.textContent='Пока ничего не сохранено';return}
+    arr.forEach(item=>{
+      const card=document.createElement('div');card.style='border:1px solid #aaa;border-radius:7px;padding:9px;margin:6px 0';
+      const title=document.createElement('b');title.textContent=item.title||'Избранное';card.appendChild(title);
+      const meta=document.createElement('div');meta.style='font-size:12px;color:#777';meta.textContent=(item.author?item.author+' · ':'')+new Date(item.time||item.savedAt||Date.now()).toLocaleString();card.appendChild(meta);
+      const body=document.createElement('div');body.style='white-space:pre-wrap;margin:6px 0';body.textContent=item.text||'';card.appendChild(body);
+      const del=document.createElement('button');del.textContent='убрать из избранного';del.onclick=()=>fetch(DB+'/users/'+cu+'/favorites/'+item.id+'.json',{method:'DELETE'}).then(()=>{loadFavorites();updateFavoriteCount()});card.appendChild(del);box.appendChild(card);
+    });
+  }).catch(()=>{const box=document.getElementById('favoritesList');if(box)box.textContent='Не удалось загрузить избранное'})
+}
+function resetGlobalSearch(){
+  const input=document.getElementById('globalSearchInput');
+  const type=document.getElementById('globalSearchType');
+  const results=document.getElementById('globalSearchResults');
+  if(input)input.value='';
+  if(type)type.value='friends';
+  if(results)results.innerHTML='';
+}
+
+function runGlobalSearch(){
+  const q=document.getElementById('globalSearchInput').value.trim().toLowerCase(),type=document.getElementById('globalSearchType').value,box=document.getElementById('globalSearchResults');
+  if(!q){box.textContent='Введи запрос для поиска';return} if(!cu){box.textContent='Сначала войди в аккаунт';return}
+  box.textContent='Ищем…';
+  const get=path=>fetch(DB+'/'+path+'.json').then(r=>r.json()).catch(()=>null);
+  const show=(items)=>{box.innerHTML='';if(!items.length){box.textContent='Ничего не найдено';return}items.slice(0,100).forEach(x=>{const d=document.createElement('div');d.style='border-bottom:1px solid #ddd;padding:7px 2px';const b=document.createElement('b');b.textContent=x.title||'';d.appendChild(b);const t=document.createElement('div');t.style='white-space:pre-wrap';t.textContent=x.text||'';d.appendChild(t);box.appendChild(d)})};
+  const contains=v=>String(v||'').toLowerCase().includes(q);
+  if(type==='friends'){
+    Promise.all([get('users/'+cu+'/friends'),get('users')]).then(([fs,users])=>{const ids=Object.keys(fs||{});show(ids.map(id=>({title:(users&&users[id]&&users[id].nick)||id,text:'ID: '+id})).filter(x=>contains(x.title)||contains(x.text))) });
+  }else if(type==='messages'){
+    Promise.all([get('chatMessages'),get('users/'+cu+'/friends')]).then(([chats,fs])=>{
+      const out=[];Object.keys(chats||{}).forEach(room=>Object.keys(chats[room]||{}).forEach(id=>{const m=chats[room][id];if(contains(m.text))out.push({title:'Общий чат · '+(m.nick||'?'),text:m.text})}));
+      const friends=Object.keys(fs||{});const dmIds=friends.map(uid=>'dm_'+[cu,uid].sort().join('_'));
+      return Promise.all(dmIds.map(id=>get(id))).then(dms=>{dms.forEach((d,i)=>Object.values(d||{}).forEach(m=>{if(contains(m.text))out.push({title:'Личное сообщение · '+(m.nick||'?'),text:m.text})}));show(out)})
+    });
+  }else if(type==='channels'){
+    Promise.all([get('channels'),get('channelMessages')]).then(([channels,msgs])=>{const out=[];Object.keys(channels||{}).forEach(id=>{const c=channels[id];if(contains(c.name))out.push({title:'Канал: '+(c.name||id),text:'Владелец: '+(c.ownerNick||'')});Object.keys((msgs||{})[id]||{}).forEach(mid=>{const m=msgs[id][mid];if(contains(m.text))out.push({title:'Пост канала: '+(c.name||id),text:m.text})})});show(out)});
+  }else if(type==='mail'){
+    get('messages').then(data=>show(Object.values(data||{}).filter(m=>(m.to===ce||m.from===ce)&&(contains(m.text)||contains(m.fromNick))).map(m=>({title:'Письмо от '+(m.fromNick||m.from||'?'),text:m.text||''}))));
+  }else if(type==='communities'){
+    Promise.all([get('communities'),get('communities')]).then(([communities])=>{const ids=Object.keys(communities||{});return Promise.all(ids.map(id=>get('communities/'+id+'/groupMessages'))).then(groups=>{const out=[];ids.forEach((id,i)=>{const c=communities[id];if(contains(c.name))out.push({title:'Сообщество: '+(c.name||id),text:''});Object.keys(groups[i]||{}).forEach(gid=>Object.values(groups[i][gid]||{}).forEach(m=>{if(contains(m.text))out.push({title:'Сообщество: '+(c.name||id),text:m.text||''})}))});show(out)})});
+  }
+}
+
 function toggleFilters(){let p=document.getElementById('filterPanel');if(p)p.style.display=p.style.display==='none'?'block':'none'}
 function loadFriendsSet(){if(!cu)return;fetch(DB+'/users/'+cu+'/friends.json').then(r=>r.json()).then(d=>{fset.clear();if(d)Object.keys(d).forEach(u=>fset.add(u))}).catch(()=>{})}
 function toggleTheme(){
@@ -1620,13 +1819,18 @@ function addStory(){
     }).catch(e=>{sm.textContent=t('error')+': '+e.message})
   }).catch(()=>{sm.textContent=t('error')})
 }
-function openActionModal(m){
-  actMsg=m;
+function openActionModal(m,context){
+  actMsg=m;actFavoriteContext=context||{type:cdi?'dm':'chat',sourceId:m.id,roomId:cdi||cci};
   document.getElementById('actFrom').textContent=(m.nick||'?')+': '+(m.text||'');
   document.getElementById('pinBtn').style.display=(cci||cdi)?'inline':'none';
+  document.getElementById('editMsgBtn').style.display=m.uid===cu?'inline':'none';
+  document.getElementById('deleteMsgBtn').style.display=m.uid===cu?'inline':'none';
+  document.getElementById('reactMsgBtn').style.display='inline';
+  reactionTarget=actFavoriteContext;
+  document.getElementById('favoriteMsgBtn').textContent='☆ добавить в избранное';
   document.getElementById('actionModal').style.display='block'
 }
-function closeActionModal(){document.getElementById('actionModal').style.display='none';actMsg=null}
+function closeActionModal(){document.getElementById('actionModal').style.display='none';actMsg=null;actFavoriteContext=null;reactionTarget=null}
 function replyToMsg(){let m=actMsg;closeActionModal();replyCtx={nick:m?m.nick:'',uid:m?m.uid:null};document.getElementById('chatCtxLabel').style.display='block';document.getElementById('chatCtxLabel').textContent=t('reply')+': '+(m?m.nick:'');document.getElementById('chatInput').focus()}
 function fwdMsg(){let m=actMsg;closeActionModal();pendingFwd={nick:m.nick,text:m.text};openPickModal('fwd')}
 function closePickModal(){document.getElementById('pickModal').style.display='none';pickKind=null}
@@ -1694,21 +1898,78 @@ function hideInbox(){document.getElementById('inbox').style.display='none';docum
 function sendMail(){let recipient=document.getElementById('mailTo').value.trim(),x=document.getElementById('mailText').value.trim();if(!recipient||!x){mailErr(t('error'));return}if(!cu){mailErr(t('error'));return}mailErr('');
   fetch(DB+'/messages.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from:ce,fromNick:cn,to:recipient,text:x,time:Date.now()})}).then(()=>{cnProgress('writeLetter');cnProgress('mailSend');document.getElementById('mailTo').value='';document.getElementById('mailText').value='';loadInbox()}).catch(e=>mailErr(t('error')+': '+e.message))}
 function loadInbox(){if(!ce)return;
-  fetch(DB+'/messages.json').then(r=>r.json()).then(d=>{let l=document.getElementById('mailList'),h='';if(d){let a=Object.keys(d).map(k=>({id:k,...d[k]})).filter(m=>m.to===ce).sort((a,b)=>(a.time||0)-(b.time||0));a.forEach(m=>{fetch(cnPath('receivedLetters/'+m.id)).then(rr=>rr.json()).then(seen=>{if(!seen){fetch(cnPath('receivedLetters/'+m.id),{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'});cnProgress('receiveLetter')}});h+='<div style="border:1px solid #999;margin:4px 0;padding:4px"><b>from:</b> '+(m.fromNick||m.from||'?')+'<br><b>to:</b> '+(m.to||'?')+'<br>'+(m.text||'')+'</div>'})}l.innerHTML=h||t('noMail')}).catch(()=>{})}
+  fetch(DB+'/messages.json').then(r=>r.json()).then(d=>{let l=document.getElementById('mailList'),h='';if(d){let a=Object.keys(d).map(k=>({id:k,...d[k]})).filter(m=>m.to===ce).sort((a,b)=>(a.time||0)-(b.time||0));a.forEach(m=>{fetch(cnPath('receivedLetters/'+m.id)).then(rr=>rr.json()).then(seen=>{if(!seen){fetch(cnPath('receivedLetters/'+m.id),{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'});cnProgress('receiveLetter');refreshUnreadBadges()}});h+='<div style="border:1px solid #999;margin:4px 0;padding:4px"><b>from:</b> '+(m.fromNick||m.from||'?')+'<br><b>to:</b> '+(m.to||'?')+'<br>'+(m.text||'')+'</div>'})}l.innerHTML=h||t('noMail')}).catch(()=>{})}
 
 function loadChatList(){fetch(DB+'/chatRooms.json').then(r=>r.json()).then(d=>{let c=document.getElementById('chatList');c.innerHTML='';if(!d)return;Object.keys(d).map(k=>({id:k,...d[k]})).forEach(r=>{let b=document.createElement('button');b.type='button';b.style='display:block;width:100%;margin:4px 0;text-align:left';b.innerHTML='<b>'+r.name+'</b> ('+t('from')+' '+r.creatorNick+')';b.onclick=()=>joinChat(r.id,r.name);c.appendChild(b)})}).catch(()=>{})}
 function createChat(){let n=document.getElementById('newChatName').value.trim();if(!n||!cu)return;fetch(DB+'/chatRooms.json',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,creatorUid:cu,creatorNick:cn,time:Date.now()})}).then(r=>r.json()).then(d=>{cnProgress('chatCreate');document.getElementById('newChatName').value='';loadChatList();joinChat(d.name,n)}).catch(()=>{})}
-function joinChat(id,name){cci=id;cdi=null;curRoom={id:id,name:name};document.getElementById('chatListSection').style.display='none';document.getElementById('chatRoomSection').style.display='block';document.getElementById('currentChatTitle').textContent=t('chat')+': '+name;clearInterval(clt);clt=null;clearInterval(dmt);dmt=null;loadChatMessages();if(cmt)clearInterval(cmt);cmt=setInterval(loadChatMessages,3000)}
+function joinChat(id,name){cci=id;cdi=null;curRoom={id:id,name:name};markRoomRead('chat_'+id);document.getElementById('chatListSection').style.display='none';document.getElementById('chatRoomSection').style.display='block';document.getElementById('currentChatTitle').textContent=t('chat')+': '+name;clearInterval(clt);clt=null;clearInterval(dmt);dmt=null;loadChatMessages();startTypingWatch();if(cmt)clearInterval(cmt);cmt=setInterval(loadChatMessages,3000)}
+function typingRoomKey(){return cdi?'dm_'+cdi:(cci?'chat_'+cci:'')}
+function typingPath(uid){return 'typing/'+typingRoomKey()+'/'+uid}
+function setMyTyping(active){
+  if(!cu||!typingRoomKey())return;
+  const url=DB+'/'+typingPath(cu)+'.json';
+  if(active)fetch(url,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({nick:cn,time:Date.now()})}).catch(()=>{});
+  else fetch(url,{method:'DELETE'}).catch(()=>{});
+}
+function onChatTyping(){
+  const input=document.getElementById('chatInput');if(!input)return;
+  if(!input.value.trim()){setMyTyping(false);return}
+  if(Date.now()-lastTypingWrite>1800){lastTypingWrite=Date.now();setMyTyping(true)}
+}
+function startTypingWatch(){
+  if(typingTimer)clearInterval(typingTimer);
+  typingTimer=setInterval(()=>{
+    const key=typingRoomKey(),box=document.getElementById('typingIndicator');
+    if(!key||!box)return;
+    fetch(DB+'/typing/'+key+'.json').then(r=>r.json()).then(data=>{
+      const now=Date.now(),names=Object.keys(data||{}).filter(uid=>uid!==cu&&data[uid]&&now-(data[uid].time||0)<6500).map(uid=>data[uid].nick||'Кто-то');
+      box.textContent=names.length?names.join(', ')+' печатает…':'';
+      box.style.display=names.length?'block':'none';
+    }).catch(()=>{});
+  },2000);
+}
+function stopTypingWatch(){
+  setMyTyping(false);
+  if(typingTimer)clearInterval(typingTimer);
+  typingTimer=null;
+  const box=document.getElementById('typingIndicator');if(box){box.textContent='';box.style.display='none'}
+}
+function searchCurrentRoom(){
+  const q=(document.getElementById('roomSearchInput').value||'').trim().toLowerCase(),box=document.getElementById('roomSearchResults');
+  if(!q){box.textContent='Введи текст для поиска';return}
+  const path=cdi?cdi:('chatMessages/'+cci);
+  fetch(DB+'/'+path+'.json').then(r=>r.json()).then(data=>{
+    const matches=Object.keys(data||{}).map(id=>({id,...data[id]})).filter(m=>String(m.text||'').toLowerCase().includes(q)).sort((a,b)=>(b.time||0)-(a.time||0));
+    box.innerHTML='';
+    if(!matches.length){box.textContent='Ничего не найдено';return}
+    matches.forEach(m=>{const row=document.createElement('div');row.style='border-bottom:1px solid #ccc;padding:6px 2px';const who=document.createElement('b');who.textContent=(m.nick||'?')+' · ';row.appendChild(who);const txt=document.createElement('span');txt.textContent=m.text||'';row.appendChild(txt);const tm=document.createElement('div');tm.style='font-size:11px;color:#888';tm.textContent=m.time?new Date(m.time).toLocaleString():'';row.appendChild(tm);box.appendChild(row)});
+  }).catch(()=>box.textContent='Ошибка поиска');
+}
+function clearRoomSearch(){const i=document.getElementById('roomSearchInput'),b=document.getElementById('roomSearchResults');if(i)i.value='';if(b)b.innerHTML=''}
+function searchCurrentChannel(){
+  const q=(document.getElementById('channelSearchInput').value||'').trim().toLowerCase(),box=document.getElementById('channelSearchResults');
+  if(!q){box.textContent='Введи текст для поиска';return}
+  const id=activeChannelId;if(!id)return;
+  fetch(DB+'/channelMessages/'+id+'.json').then(r=>r.json()).then(data=>{
+    if(id!==activeChannelId)return;
+    const matches=Object.keys(data||{}).map(key=>({id:key,...data[key]})).filter(m=>String(m.text||'').toLowerCase().includes(q)).sort((a,b)=>(b.time||0)-(a.time||0));
+    box.innerHTML='';
+    if(!matches.length){box.textContent='Ничего не найдено';return}
+    matches.forEach(m=>{const row=document.createElement('div');row.style='border-bottom:1px solid #ccc;padding:6px 2px';const who=document.createElement('b');who.textContent=(m.nick||'?')+' · ';row.appendChild(who);const txt=document.createElement('span');txt.textContent=m.text||'';row.appendChild(txt);const tm=document.createElement('div');tm.style='font-size:11px;color:#888';tm.textContent=m.time?new Date(m.time).toLocaleString():'';row.appendChild(tm);box.appendChild(row)});
+  }).catch(()=>box.textContent='Ошибка поиска');
+}
+function clearChannelSearch(){const i=document.getElementById('channelSearchInput'),b=document.getElementById('channelSearchResults');if(i)i.value='';if(b)b.innerHTML=''}
+
 function updateChatInputLabel(){let l=document.getElementById('chatCtxLabel');l.style.display=(replyCtx||fwdData)?'block':'none';l.textContent=(replyCtx?t('reply')+': '+replyCtx.nick:'')+(fwdData?t('forwardFrom')+': '+fwdData.nick:'')}
-function leaveChat(){cci=null;cdi=null;replyCtx=null;fwdData=null;updateChatInputLabel();document.getElementById('chatListSection').style.display='block';document.getElementById('chatRoomSection').style.display='none';clearInterval(cmt);cmt=null;clearInterval(dmt);dmt=null;loadChatList();loadDMList();if(clt)clearInterval(clt);clt=setInterval(()=>{loadChatList();loadDMList()},3000)}
-function sendChatMsg(){let t=document.getElementById('chatInput').value.trim();if((!cci&&!cdi)||!t||!cu)return;let p=cdi||('chatMessages/'+cci);
+function leaveChat(){stopTypingWatch();cci=null;cdi=null;replyCtx=null;fwdData=null;updateChatInputLabel();document.getElementById('chatListSection').style.display='block';document.getElementById('chatRoomSection').style.display='none';clearInterval(cmt);cmt=null;clearInterval(dmt);dmt=null;loadChatList();loadDMList();if(clt)clearInterval(clt);clt=setInterval(()=>{loadChatList();loadDMList()},3000)}
+function sendChatMsg(){let t=document.getElementById('chatInput').value.trim();if((!cci&&!cdi)||!t||!cu)return;setMyTyping(false);let p=cdi||('chatMessages/'+cci);
   let m={uid:cu,nick:cn,text:t,time:Date.now()};
   if(gradChat&&VIP.includes(cu)){m.grad=gradChat;gradChat=null;clearGrad('chat')}
   if(replyCtx){m.replyTo=replyCtx.nick;m.replyToUid=replyCtx.uid||null;replyCtx=null;updateChatInputLabel()}
   if(fwdData){m.fwdFrom=fwdData.nick;m.fwdText=fwdData.text;fwdData=null;updateChatInputLabel()}
   let key='m'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
   fetch(DB+'/'+p+'/'+key+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(m)}).then(()=>{cnProgress('messages100');if(cdi)cnProgress('pm5');if(m.replyTo)cnProgress('reply30');document.getElementById('chatInput').value='';if(cdi)loadDMMessages();else loadChatMessages()}).catch(()=>{})}
-function loadChatMessages(){if(!cci)return;loadPinned();fetch(DB+'/chatMessages/'+cci+'.json').then(r=>r.json()).then(d=>{let c=document.getElementById('chatMessages');c.innerHTML='';if(!d||!Object.keys(d).length){c.innerHTML='<div style="color:#999;padding:8px">'+t('noMessages')+'</div>';return}Object.keys(d).map(k=>({id:k,...d[k]})).sort((a,b)=>(a.time||0)-(b.time||0)).forEach(m=>{c.appendChild(msgEl(m))})}).catch(()=>{})}
+function loadChatMessages(){if(!cci)return;markRoomRead('chat_'+cci);loadPinned();fetch(DB+'/chatMessages/'+cci+'.json').then(r=>r.json()).then(d=>{let c=document.getElementById('chatMessages');c.innerHTML='';if(!d||!Object.keys(d).length){c.innerHTML='<div style="color:#999;padding:8px">'+t('noMessages')+'</div>';return}Object.keys(d).map(k=>({id:k,...d[k]})).sort((a,b)=>(a.time||0)-(b.time||0)).forEach(m=>{c.appendChild(msgEl(m))})}).catch(()=>{})}
 
 
 function loadChannelList(){
@@ -1731,7 +1992,7 @@ function createChannel(){
     .catch(e=>alert(e.message||t('error')));
 }
 function openChannel(id,channel){
-  activeChannelId=id;activeChannel=channel||{};
+  markRoomRead('channel_'+id);activeChannelId=id;activeChannel=channel||{};clearChannelSearch();
   document.getElementById('channelListSection').style.display='none';document.getElementById('channelRoomSection').style.display='block';
   document.getElementById('currentChannelTitle').textContent=activeChannel.name||'Канал';
   document.getElementById('channelOwnerLabel').textContent=t('channelOwner')+': '+(activeChannel.ownerNick||'?');
@@ -1741,12 +2002,12 @@ function openChannel(id,channel){
   loadChannelMessages();
 }
 function leaveChannel(){
-  activeChannelId=null;activeChannel=null;
+  activeChannelId=null;activeChannel=null;clearChannelSearch();
   document.getElementById('channelListSection').style.display='block';document.getElementById('channelRoomSection').style.display='none';
   document.getElementById('channelInput').value='';loadChannelList();
 }
 function loadChannelMessages(){
-  if(!activeChannelId)return;const id=activeChannelId;
+  if(!activeChannelId)return;const id=activeChannelId;markRoomRead('channel_'+id);
   fetch(DB+'/channelMessages/'+id+'.json').then(r=>r.json()).then(data=>{
     if(id!==activeChannelId)return;const box=document.getElementById('channelMessages');box.innerHTML='';
     if(!data||!Object.keys(data).length){box.innerHTML='<div style="color:#999;padding:8px">'+t('noMessages')+'</div>';return}
@@ -1755,6 +2016,11 @@ function loadChannelMessages(){
       const head=document.createElement('b');head.textContent=m.nick||'?';el.appendChild(head);
       const body=document.createElement('div');body.textContent=m.text||'';body.style='white-space:pre-wrap';el.appendChild(body);
       if(m.time){const tm=document.createElement('div');tm.style='font-size:11px;color:#888';tm.textContent=new Date(m.time).toLocaleString();el.appendChild(tm)}
+      const ctx={type:'channelMessage',sourceId:m.id,roomId:id};
+      const fav=document.createElement('button');fav.textContent='☆ в избранное';fav.onclick=()=>saveFavorite({type:'channelMessage',sourceId:m.id,roomId:id,text:m.text||'',author:m.nick||'',time:m.time||Date.now(),title:'Пост канала'});el.appendChild(fav);
+      const react=document.createElement('button');react.textContent='☺ реакция';react.onclick=()=>openReactionPicker(ctx);el.appendChild(react);
+      el.appendChild(renderReactions(m.reactions||{},ctx));
+      el.onclick=(ev)=>{if(ev.target===el||ev.target===head||ev.target===body)openActionModal(m,ctx)};
       box.appendChild(el);
     });
   }).catch(()=>{});
@@ -1847,7 +2113,13 @@ function loadCommunityGroupMessages(){
       const el=document.createElement('div');el.style='border:1px solid #eee;border-radius:7px;padding:8px;margin:4px 0';
       const head=document.createElement('b');head.textContent=m.nick||'?';el.appendChild(head);
       const body=document.createElement('div');body.textContent=m.text||'';body.style='white-space:pre-wrap;overflow-wrap:anywhere';el.appendChild(body);
-      const tm=document.createElement('div');tm.style='font-size:11px;color:#888';tm.textContent=m.time?new Date(m.time).toLocaleString():'';el.appendChild(tm);box.appendChild(el);
+      const tm=document.createElement('div');tm.style='font-size:11px;color:#888';tm.textContent=m.time?new Date(m.time).toLocaleString():'';el.appendChild(tm);
+      const ctx={type:'communityMessage',sourceId:m.id,roomId:cid,groupId:gid};
+      const fav=document.createElement('button');fav.textContent='☆ в избранное';fav.onclick=()=>saveFavorite({type:'communityMessage',sourceId:m.id,roomId:cid,groupId:gid,text:m.text||'',author:m.nick||'',time:m.time||Date.now(),title:'Сообщение сообщества'});el.appendChild(fav);
+      const react=document.createElement('button');react.textContent='☺ реакция';react.onclick=()=>openReactionPicker(ctx);el.appendChild(react);
+      el.appendChild(renderReactions(m.reactions||{},ctx));
+      el.onclick=(ev)=>{if(ev.target===el||ev.target===head||ev.target===body||ev.target===tm)openActionModal(m,ctx)};
+      box.appendChild(el);
     });
   }).catch(()=>{});
 }
@@ -1871,7 +2143,7 @@ function sendFriendRequest(){let e=document.getElementById('friendEmail').value.
       })
     })
   }).catch(e=>friendMsg(t('error')+': '+e.message))}
-function loadRequests(){if(!cu)return;fetch(DB+'/users/'+cu+'/friendRequests.json').then(r=>r.json()).then(d=>{let c=document.getElementById('incomingRequests'),cnt=0,h='';if(d){Object.keys(d).forEach(k=>{cnt++;let r=d[k];h+='<div style="border:1px solid #999;margin:4px 0;padding:4px"><b>'+r.fromNick+'</b> ('+r.fromEmail+') <button onclick="acceptRequest(\''+k+'\',\''+r.fromUid+'\')">'+t('confirm')+'</button> <button onclick="declineRequest(\''+k+'\')">'+t('cancel')+'</button></div>'})}c.innerHTML=h||t('noIncomingReqs');document.getElementById('tabFriendsBtn').textContent=cnt?t('friends')+' +'+cnt:t('friends')}).catch(()=>{})}
+function loadRequests(){if(!cu)return;fetch(DB+'/users/'+cu+'/friendRequests.json').then(r=>r.json()).then(d=>{let c=document.getElementById('incomingRequests'),cnt=0,h='';if(d){Object.keys(d).forEach(k=>{cnt++;let r=d[k];h+='<div style="border:1px solid #999;margin:4px 0;padding:4px"><b>'+r.fromNick+'</b> ('+r.fromEmail+') <button onclick="acceptRequest(\''+k+'\',\''+r.fromUid+'\')">'+t('confirm')+'</button> <button onclick="declineRequest(\''+k+'\')">'+t('cancel')+'</button></div>'})}c.innerHTML=h||t('noIncomingReqs');document.getElementById('friendsListTab').textContent='друзья';document.getElementById('friendsRequestsTab').textContent=cnt?'друзья +'+cnt:'друзья';document.getElementById('tabFriendsBtn').textContent=cnt?t('friends')+' +'+cnt:t('friends')}).catch(()=>{})}
 function acceptRequest(k,fu){if(!cu)return;friendMsg('');Promise.all([fetch(DB+'/users/'+cu+'/friends/'+fu+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'}),fetch(DB+'/users/'+fu+'/friends/'+cu+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:'true'}),fetch(DB+'/users/'+cu+'/friendRequests/'+k+'.json',{method:'DELETE'})]).then(()=>{cnProgress('friendAccept');loadRequests();loadFriends()}).catch(e=>friendMsg(t('error')+': '+e.message))}
 function declineRequest(k){if(!cu)return;fetch(DB+'/users/'+cu+'/friendRequests/'+k+'.json',{method:'DELETE'}).then(()=>loadRequests()).catch(e=>friendMsg(t('error')+': '+e.message))}
 
